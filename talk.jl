@@ -27,6 +27,10 @@ begin
 	using PlyIO
 	using CSV
 	
+	# specific functionality from ML stack
+	using MLJ: @load, coerce, Multiclass
+	using LossFunctions: value, MisclassLoss, AggMode
+	
 	# skip prompt to download data dependencies
 	ENV["DATADEPS_ALWAYS_ACCEPT"] = "true"
 	
@@ -34,13 +38,14 @@ begin
 	import WGLMakie as WGL
 	theme = WGL.Theme(
 		resolution = (650,500),
-		colormap = :inferno,
+		colormap = :viridis,
 		aspect = :data,
+		markersize = 2
 	)
 	WGL.set_theme!(theme)
 	
 	# helper function to read meshes
-	function readply(fname)
+	function plyload(fname)
 		ply = load_ply(fname)
 		x = ply["vertex"]["x"]
   		y = ply["vertex"]["y"]
@@ -125,6 +130,8 @@ end
 md"""
 ## Examples of geospatial data
 
+Thanks to **Julia's multiple-dispatch**, we were able to achieve a very **clean user interface**, including a universal `georef` function to combine various types of tables and geospatial domains.
+
 ### 3D grid data
 """
 
@@ -137,11 +144,11 @@ begin
 	𝒟 = CartesianGrid(10, 10, 10)
 	
 	# combine table with domain
-	Ω = georef(𝒯, 𝒟)
+	rock = georef(𝒯, 𝒟)
 end
 
 # ╔═╡ fa553a82-6f35-4d6e-845c-a97cd54be7f6
-viz(Ω, variable = :φ)
+viz(rock, variable = :φ)
 
 # ╔═╡ 706e294d-ce1b-4be1-b1cf-00a27bc3ede3
 md"""
@@ -154,11 +161,11 @@ begin
 	img = load(download("http://www.gstatic.com/prettyearth/assets/full/1408.jpg"))
 	
 	# georeference color attribute on 2D grid
-	Ι = georef((color = img,))
+	city = georef((color = img,))
 end
 
 # ╔═╡ ea422ea7-42ef-4245-8767-d6631cca3ed3
-viz(Ι, variable = :color)
+viz(city, variable = :color)
 
 # ╔═╡ 9fdcf73b-3c3d-4f2d-b8bf-d15f1dcf15cd
 md"""
@@ -168,10 +175,9 @@ md"""
 # ╔═╡ 4527d107-2849-4b80-9c52-3db6fc888ec2
 begin
 	# download mesh file
-	fname = download("https://people.sc.fsu.edu/~jburkardt/data/ply/beethoven.ply")
-	
-	# load mesh from disk
-	ℳ = readply(fname)
+	ℳ = plyload(
+		download("https://people.sc.fsu.edu/~jburkardt/data/ply/beethoven.ply")
+	)
 	
 	# compute attributes on triangles
 	𝒜 = log.(area.(ℳ))
@@ -194,57 +200,124 @@ BRA = GeoTables.gadm("BRA", children = true)
 
 # ╔═╡ 472ba4c4-4d03-48f8-81ba-0ebe9b78d635
 let
-	# table with attribute per state
+	# compute attributes per state
 	table = (letters = length.(BRA.NAME_1),)
 	
-	# georeference table on states
+	# georeference table with states
 	🇧🇷 = georef(table, domain(BRA))
 	
 	# visualize states in different color
 	viz(🇧🇷, variable = :letters)
 end
 
-# ╔═╡ b03e477b-c92e-424a-9193-90171dc4c72b
+# ╔═╡ a076baa5-6442-4f27-920d-5788b0b23fa6
 md"""
-### 2D point set data
+### More examples
+
+Please check the [GeoStatsTutorials](https://github.com/JuliaEarth/GeoStatsTutorials) for more examples and features:
 """
 
-# ╔═╡ 075ab82d-090d-4248-8c66-91b39e5bfdcd
-begin
-	table = """
-	longitude,latitude,magnitude,station
-	-116.711900,33.714100,1.0,"Keenwild Fire Station, Mountain Center, CA, USA"
-	-116.459400,33.611700,1.0,"Pinyon Flats Observatory, CA, USA"
-	-116.847800,33.630000,1.0,"Red Mountain, Riverside Co, CA, USA"
-	-122.952698,38.823601,1.0,"Hale Ranch"
-	-122.702583,38.775879,1.0,"Engles Strong Motion"
-	-122.235580,37.876220,2.9,"Byerly Seismographic Vault, Berkeley, CA, USA"
-	-122.243180,37.874920,4.1,"LBL Building 67, Berkeley, CA, USA"
-	-122.254290,37.877150,4.2,"LBL Building 88, Berkeley, CA, USA"
-	-120.386510,38.034550,1.0,"Columbia College, Columbia, CA, USA"
-	""" |> IOBuffer |> CSV.File
-	
-	earthquakes = georef(table, (:longitude, :latitude))
-end
-
-# ╔═╡ dfaccc2e-2ff3-4c48-aa74-e83188cd28b0
-let
-	# download California geographic data
-	CA = GeoTables.gadm("USA", "California", children = true)
-	
-	# visualize domain with counties
-	viz(domain(CA), decimation = 0.01)
-	
-	# visualize point set data
-	viz!(earthquakes, variable = :magnitude)
-	
-	WGL.current_figure()
-end
+# ╔═╡ d1ed848a-6221-4386-8066-83b1b6ede92f
+html"""
+<iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=PLsH4hc788Z1f1e61DN3EV9AhDlpbhhanw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+"""
 
 # ╔═╡ 6f07a125-7801-4f53-8372-39a2e34d87be
 md"""
 ## Learning from geospatial data
+
+Let's recall the definition of well-posed learning problems:
+
+> **Definition ([Mitchell 1997](http://www.cs.cmu.edu/~tom/mlbook.html)):** A computer program is said to **learn** from experience $$\mathcal{E}$$ with respect to some class of tasks $$\mathcal{T}$$ and performance measure $$\mathcal{P}$$, if its performance at tasks in $$\mathcal{T}$$, as measured by $$\mathcal{P}$$, improves with experience $$\mathcal{E}$$.
+
+**Example:** classical statistical learning via empirical risk minimization
+
+$$\hat{f} = \arg\min_{h\in\mathcal{H}} \mathbb{E}_{(\mathbf{x},y) \sim \Pr}\left[\mathcal{L}(y, h(\mathbf{x}))\right] \approx \frac{1}{n} \sum_{i=1}^n \mathcal{L}(y^{(i)},h(\mathbf{x}^{(i)}))$$
+
+where $$\mathcal{E}$$ is a data set with $$n$$ samples, $$\mathcal{P}$$ is the empirical risk and $$\mathcal{T}$$ is a classical learning task such as regression or classification.
+
+Assumptions which do **not** hold in geospatial applications:
+
+1. training samples are i.i.d.
+2. train and test distributions are equal
+3. samples share a common support (i.e. volume)
 """
+
+# ╔═╡ 0b1e0eb1-8188-49b1-ac38-a14b51e2f1b8
+md"""
+### Can't hold onto assumptions ⚠️
+
+Suppose we are given a crop classification model:
+
+- **features ($$\mathbf{x}$$):** bands of satellite image
+- **prediction ($$\hat{y}$$):** crop type (soy, corn, ...)
+
+and are asked to estimate its **generalization error** w.r.t. a *green field* (South East) knowing that annotations are only available at a nearby *brown field* (North West):
+"""
+
+# ╔═╡ 58bc4235-e61b-4c9a-8ede-3633e1c2f7a9
+begin
+	# attributes and coordinates x and y
+	data = georef(CSV.File("data/agriculture.csv"), (:x, :y))
+	
+	# adjust scientific type of crop column
+	Ω = coerce(data, :crop => Multiclass)
+	
+	# 20%/80% split along the (1, -1) direction
+	Ωₛ, Ωₜ = split(Ω, 0.2, (1.0, -1.0))
+	
+	# visualize geospatial domains
+	viz(domain(Ωₛ), elementcolor = :saddlebrown)
+	viz!(domain(Ωₜ), elementcolor = :green)
+	
+	WGL.current_figure()
+end
+
+# ╔═╡ ff7c5f94-363e-442d-b76b-0403608d0cb9
+md"""
+Let's follow the traditional k-fold cross-validation methodology:
+
+1. subdivide the *brown field* into k random folds
+2. average the empirical risk over the folds
+"""
+
+# ╔═╡ df79f3a8-4d99-46a2-acd2-838f6e442526
+begin
+	# learning task: satellite bands → crop type
+	𝓉 = ClassificationTask((:band1, :band2, :band3, :band4), :crop)
+	
+	# learning problem: train in Ωₛ and predict in Ωₜ
+	𝓅 = LearningProblem(Ωₛ, Ωₜ, 𝓉)
+	
+	# learning model: decision tree
+	𝓂 = @load DecisionTreeClassifier pkg=DecisionTree
+	
+	# learning strategy: naive pointwise learning
+	𝓁 = PointwiseLearn(𝓂())
+	
+	# loss function: misclassification loss
+	ℒ = MisclassLoss()
+	
+	# classical 10-fold cross-validation
+	cv = CrossValidation(10, loss = Dict(:crop => ℒ))
+	
+	# estimate of generalization error
+	ϵ̂cv = error(𝓁, 𝓅, cv)[:crop]
+end
+
+# ╔═╡ b3d1ea8a-01d1-4b2a-a82c-fa5b90574082
+md"""
+The actual error of the model is much higher:
+"""
+
+# ╔═╡ 7cc4957a-3d33-4034-80af-892b863aece9
+begin
+	# train in Ωₛ and predict in Ωₜ
+	Ω̂ₜ = solve(𝓅, 𝓁)
+	
+	# actual error of the model
+	ϵ = value(ℒ, Ωₜ.crop, Ω̂ₜ.crop, AggMode.Mean())
+end
 
 # ╔═╡ Cell order:
 # ╟─d088c772-c7b4-11eb-1796-7365ee1abe49
@@ -268,7 +341,12 @@ md"""
 # ╟─7df28235-efaf-42f9-9943-c7d452dfd347
 # ╠═330a3630-38fa-4948-9498-c336fb0dc8f5
 # ╠═472ba4c4-4d03-48f8-81ba-0ebe9b78d635
-# ╟─b03e477b-c92e-424a-9193-90171dc4c72b
-# ╠═075ab82d-090d-4248-8c66-91b39e5bfdcd
-# ╠═dfaccc2e-2ff3-4c48-aa74-e83188cd28b0
+# ╟─a076baa5-6442-4f27-920d-5788b0b23fa6
+# ╟─d1ed848a-6221-4386-8066-83b1b6ede92f
 # ╟─6f07a125-7801-4f53-8372-39a2e34d87be
+# ╟─0b1e0eb1-8188-49b1-ac38-a14b51e2f1b8
+# ╠═58bc4235-e61b-4c9a-8ede-3633e1c2f7a9
+# ╟─ff7c5f94-363e-442d-b76b-0403608d0cb9
+# ╠═df79f3a8-4d99-46a2-acd2-838f6e442526
+# ╟─b3d1ea8a-01d1-4b2a-a82c-fa5b90574082
+# ╠═7cc4957a-3d33-4034-80af-892b863aece9
