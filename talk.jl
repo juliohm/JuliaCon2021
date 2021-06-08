@@ -25,13 +25,17 @@ begin
 	using PlutoUI
 	using FileIO
 	using PlyIO
+	using CSV
+	
+	# skip prompt to download data dependencies
+	ENV["DATADEPS_ALWAYS_ACCEPT"] = "true"
 	
 	# default vizualization settings
 	import WGLMakie as WGL
 	theme = WGL.Theme(
 		resolution = (650,500),
 		colormap = :inferno,
-		aspect = 1,
+		aspect = :data,
 	)
 	WGL.set_theme!(theme)
 	
@@ -89,7 +93,7 @@ From Greek *geō-* the term **Geo** means Earth as in **Geo**logy, **Geo**physic
 
 ### Geo ≡ Geospatial
 
-**Geo** can also mean Geospatial as in **Geo**spatial sciences.
+**Geo** can also mean Geospatial as in **Geo**spatial sciences and Computational **Geo**metry.
 
 > In [GeoStats.jl](https://github.com/JuliaEarth/GeoStats.jl) we adopt the second connotation and refer to **geo**statistics as the branch of statistics developed for **geo**spatial data.
 """
@@ -106,8 +110,6 @@ Very generally, **geo**spatial data is the combination of:
 The concept of **table** is widespread. We support any table implementing the [Tables.jl](https://github.com/JuliaData/Tables.jl) interface, including named tuples, dataframes, SQL databases, Excel spreadsheets, Apache Arrow, etc.
 
 By geospatial **domain** we mean any *discretization* of a region in physical space. We support any domain implementing the [Meshes.jl]() interface, including Cartesian grids, point sets, collections of geometries and general unstructured meshes.
-
-A 3D grid is an example of a geospatial domain:
 """
 
 # ╔═╡ dc2345d4-b338-4c3c-aaa4-789988832406
@@ -115,7 +117,7 @@ let
 	# discretization of cube region
 	grid = CartesianGrid(10, 10, 10)
 	
-	# visualization of grid domain
+	# visualize 3D grid on GPU
 	viz(grid)
 end
 
@@ -165,22 +167,79 @@ md"""
 
 # ╔═╡ 4527d107-2849-4b80-9c52-3db6fc888ec2
 begin
-	# download mesh of Beethoven
-	ℳ = readply(download(
-			"https://people.sc.fsu.edu/~jburkardt/data/ply/beethoven.ply"))
+	# download mesh file
+	fname = download("https://people.sc.fsu.edu/~jburkardt/data/ply/beethoven.ply")
+	
+	# load mesh from disk
+	ℳ = readply(fname)
 	
 	# compute attributes on triangles
-	A = log.(area.(ℳ))
-	C = centroid.(ℳ)
-	X = first.(coordinates.(C))
-	Z = last.(coordinates.(C))
+	𝒜 = log.(area.(ℳ))
 	
 	# combine attribute table with mesh
-	👤 = georef((A = A, X = X, Z = Z), ℳ)
+	👤 = georef((𝒜 = 𝒜,), ℳ)
 end
 
 # ╔═╡ 9f1128e8-13ae-4334-bb9f-cc718e80d024
-viz(👤, variable = :A)
+viz(👤, variable = :𝒜)
+
+# ╔═╡ 7df28235-efaf-42f9-9943-c7d452dfd347
+md"""
+### 2D geometry set data
+"""
+
+# ╔═╡ 330a3630-38fa-4948-9498-c336fb0dc8f5
+# download Brazil geographic data
+BRA = GeoTables.gadm("BRA", children = true)
+
+# ╔═╡ 472ba4c4-4d03-48f8-81ba-0ebe9b78d635
+let
+	# table with attribute per state
+	table = (letters = length.(BRA.NAME_1),)
+	
+	# georeference table on states
+	🇧🇷 = georef(table, domain(BRA))
+	
+	# visualize states in different color
+	viz(🇧🇷, variable = :letters)
+end
+
+# ╔═╡ b03e477b-c92e-424a-9193-90171dc4c72b
+md"""
+### 2D point set data
+"""
+
+# ╔═╡ 075ab82d-090d-4248-8c66-91b39e5bfdcd
+begin
+	table = """
+	longitude,latitude,magnitude,station
+	-116.711900,33.714100,1.0,"Keenwild Fire Station, Mountain Center, CA, USA"
+	-116.459400,33.611700,1.0,"Pinyon Flats Observatory, CA, USA"
+	-116.847800,33.630000,1.0,"Red Mountain, Riverside Co, CA, USA"
+	-122.952698,38.823601,1.0,"Hale Ranch"
+	-122.702583,38.775879,1.0,"Engles Strong Motion"
+	-122.235580,37.876220,2.9,"Byerly Seismographic Vault, Berkeley, CA, USA"
+	-122.243180,37.874920,4.1,"LBL Building 67, Berkeley, CA, USA"
+	-122.254290,37.877150,4.2,"LBL Building 88, Berkeley, CA, USA"
+	-120.386510,38.034550,1.0,"Columbia College, Columbia, CA, USA"
+	""" |> IOBuffer |> CSV.File
+	
+	earthquakes = georef(table, (:longitude, :latitude))
+end
+
+# ╔═╡ dfaccc2e-2ff3-4c48-aa74-e83188cd28b0
+let
+	# download California geographic data
+	CA = GeoTables.gadm("USA", "California", children = true)
+	
+	# visualize domain with counties
+	viz(domain(CA), decimation = 0.01)
+	
+	# visualize point set data
+	viz!(earthquakes, variable = :magnitude)
+	
+	WGL.current_figure()
+end
 
 # ╔═╡ 6f07a125-7801-4f53-8372-39a2e34d87be
 md"""
@@ -206,4 +265,10 @@ md"""
 # ╟─9fdcf73b-3c3d-4f2d-b8bf-d15f1dcf15cd
 # ╠═4527d107-2849-4b80-9c52-3db6fc888ec2
 # ╠═9f1128e8-13ae-4334-bb9f-cc718e80d024
+# ╟─7df28235-efaf-42f9-9943-c7d452dfd347
+# ╠═330a3630-38fa-4948-9498-c336fb0dc8f5
+# ╠═472ba4c4-4d03-48f8-81ba-0ebe9b78d635
+# ╟─b03e477b-c92e-424a-9193-90171dc4c72b
+# ╠═075ab82d-090d-4248-8c66-91b39e5bfdcd
+# ╠═dfaccc2e-2ff3-4c48-aa74-e83188cd28b0
 # ╟─6f07a125-7801-4f53-8372-39a2e34d87be
