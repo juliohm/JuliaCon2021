@@ -1,7 +1,9 @@
 [deps]
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 GeoStats = "dcc97b0b-8ce5-5539-9008-bb190f959ef6"
 GeoTables = "e502b557-6362-48c1-8219-d30d308dcdb0"
 JSServe = "824d6782-a2ef-11e9-3a09-e5662e0c26f9"
 MeshViz = "9ecf9c4f-6e5a-4b5e-83ae-06f2c7a661d8"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+PlyIO = "42171d58-473b-503a-8d5f-782019eb09ec"
 WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"

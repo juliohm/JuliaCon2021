@@ -1030,6 +1030,11 @@ git-tree-sha1 = "44e225d5837e2a2345e69a1d1e01ac2443ff9fcb"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 version = "0.7.9"
 
+[[PlyIO]]
+git-tree-sha1 = "8a3c809e929f255c46e8a0f9bca2174b8c51fbd2"
+uuid = "42171d58-473b-503a-8d5f-782019eb09ec"
+version = "1.1.0"
+
 [[PointPatterns]]
 deps = ["Distributions", "GeoStatsBase", "Meshes"]
 git-tree-sha1 = "aa6c09ea2efe8d782b3e6b64b68013103e52bbb2"
