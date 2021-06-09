@@ -45,7 +45,7 @@ begin
 	WGL.set_theme!(theme)
 	
 	# helper function to read meshes
-	function plyload(fname)
+	function loadply(fname)
 		ply = load_ply(fname)
 		x = ply["vertex"]["x"]
   		y = ply["vertex"]["y"]
@@ -58,23 +58,28 @@ end;
 
 # ╔═╡ e02bb839-dbe3-4e05-ad48-e39020d605d1
 html"""
-<img src="https://juliacon.org/assets/shared/img/logo_20.svg"> <font size=20>2021</font>
+<img src="https://juliacon.org/assets/shared/img/logo_20.svg" width=250> <font size=20>2021</font>
 """
 
 # ╔═╡ b85daaf1-d07b-44d0-9cef-cc19087d792d
 md"""
 # Geostatistical Learning
 
+#### Challenges and Opportunities
+"""
+
+# ╔═╡ 79e973b5-2cb2-4c3b-af9d-a44307fdd659
+md"""
 Júlio Hoffimann, Ph.D. ([julio.hoffimann@impa.br](mailto:julio.hoffimann@impa.br))
 
 *Postdoctoral fellow in Industrial Mathematics*
 
-Instituto de Matemática Pura e Aplicada
+Instituto de Matemática pura e Aplicada
 """
 
 # ╔═╡ 26ff713f-9ab8-460d-a748-bca8217d4ee5
 html"""
-<img src="https://icm2018.impa.br/images/logo-impa.png", width=200>
+<img src="https://icm2018.impa.br/images/logo-impa.png", width=150>
 """
 
 # ╔═╡ 5bd7385d-afa7-49ae-83a7-6879c48c770e
@@ -175,7 +180,7 @@ md"""
 # ╔═╡ 4527d107-2849-4b80-9c52-3db6fc888ec2
 begin
 	# download mesh file
-	ℳ = plyload(
+	ℳ = loadply(
 		download("https://people.sc.fsu.edu/~jburkardt/data/ply/beethoven.ply")
 	)
 	
@@ -250,7 +255,7 @@ md"""
 Suppose we are given a crop classification model:
 
 - **features ($$\mathbf{x}$$):** bands of satellite image
-- **prediction ($$\hat{y}$$):** crop type (soy, corn, ...)
+- **target ($$y$$):** crop type (soy, corn, ...)
 
 and are asked to estimate its **generalization error** w.r.t. a *green field* (South East) knowing that annotations are only available at a nearby *brown field* (North West):
 """
@@ -267,19 +272,16 @@ begin
 	Ωₛ, Ωₜ = split(Ω, 0.2, (1.0, -1.0))
 	
 	# visualize geospatial domains
-	viz(domain(Ωₛ), elementcolor = :saddlebrown)
+	viz(domain(Ωₛ), elementcolor = :saddlebrown,
+		axis = (xlabel = "longitude", ylabel = "latitude"))
 	viz!(domain(Ωₜ), elementcolor = :green)
-	
+	WGL.lines!([(270,660), (720,1140)],
+		       linestyle = :dash, color = :black)
+	WGL.annotations!(["brown field (𝒟ₛ)","green field (𝒟ₜ)"],
+		             [WGL.Point(500,1200), WGL.Point(-50,300)],
+		             textsize = 30, color = [:saddlebrown,:green])
 	WGL.current_figure()
 end
-
-# ╔═╡ ff7c5f94-363e-442d-b76b-0403608d0cb9
-md"""
-Let's follow the traditional k-fold cross-validation methodology:
-
-1. subdivide the *brown field* into k random folds
-2. average the empirical risk over the folds
-"""
 
 # ╔═╡ df79f3a8-4d99-46a2-acd2-838f6e442526
 begin
@@ -303,27 +305,87 @@ begin
 	
 	# estimate of generalization error
 	ϵ̂cv = error(𝓁, 𝓅, cv)[:crop]
-end
-
-# ╔═╡ b3d1ea8a-01d1-4b2a-a82c-fa5b90574082
-md"""
-The actual error of the model is much higher:
-"""
-
-# ╔═╡ 7cc4957a-3d33-4034-80af-892b863aece9
-begin
+	
 	# train in Ωₛ and predict in Ωₜ
 	Ω̂ₜ = solve(𝓅, 𝓁)
 	
 	# actual error of the model
 	ϵ = value(ℒ, Ωₜ.crop, Ω̂ₜ.crop, AggMode.Mean())
+end;
+
+# ╔═╡ ff7c5f94-363e-442d-b76b-0403608d0cb9
+md"""
+Let's follow the traditional k-fold cross-validation methodology:
+
+1. subdivide the *brown field* $\mathcal{D}_s$ into k random folds
+2. average the empirical risk over the folds
+
+$$\hat\epsilon(h) = \frac{1}{k} \sum_{j=1}^k \frac{1}{|\mathcal{D}_s^{(j)}|} \int_{\mathcal{D}_s^{(j)}} \mathcal{L}(y_\mathbf{u}, h(\mathbf{x}_\mathbf{u}))d\mathbf{u}$$
+"""
+
+# ╔═╡ 0cc70b6e-8f0c-44ac-a83a-2d82e4db3348
+LocalResource("assets/cvsetup.png")
+
+# ╔═╡ 8b05bd01-1ba7-4f8a-80cc-bdc5a69024f9
+md"""
+#### Result:
+
+The model's estimated error is **$(round(ϵ̂cv*100, digits=2))%** misclassification. However, when we deploy the model in the *green field* $\mathcal{D}_t$ the error is much higher with **$(round(ϵ*100, digits=2))%** of the samples misclassified. The error is **$(round(ϵ / ϵ̂cv, digits=2))** times higher than expected.
+"""
+
+# ╔═╡ 56fbe58f-facd-4922-b7cf-8cbadb52be83
+let
+	fig = WGL.Figure(resolution = (650,300))
+	viz(fig[1,1], Ω̂ₜ, variable = :crop,
+	    axis = (
+			title = "predicted crop type",
+			xlabel = "longitude", ylabel="latitude"
+		)
+	)
+	viz(fig[1,2], Ωₜ, variable = :crop,
+		axis = (
+			title = "actual crop type",
+			xlabel = "longitude", ylabel="latitude"
+		)
+	)
+	WGL.linkaxes!(filter(x -> x isa WGL.Axis, fig.content)...)
+	fig
 end
+
+# ╔═╡ 77c82d92-3331-4217-b8de-153ea94bfbc8
+md"""
+#### What happened?
+
+Classical cross-validation (CV) relies heavily on i.i.d. samples and equal distributions:
+
+1. hold-out points at **random** (red points)
+2. learn model with remaining points (other colors)
+3. estimate error using prediction at hold-out points
+
+(Stone 1974, Geisser 1975)
+"""
+
+# ╔═╡ b6dd59bd-cb71-44b2-8a69-a0b04bb69664
+LocalResource("assets/cv.png")
+
+# ╔═╡ 952dce52-9950-4b66-9348-f804b2887fdf
+md"""
+### Geostatistical validation
+
+In an attempt to avoid the super optimism of CV, the spatial statistics community proposed various alternative methods such as block cross-validation (BCV) and leave-ball-out (LBO).
+
+These methods rely on **systematic partitions** of the source domain, which are often parameterized with a spatial correlation length $r > 0$.
+"""
+
+# ╔═╡ 8347ecd2-305d-4a81-9ba0-8fefc0d01db2
+LocalResource("assets/bcv-lbo.png")
 
 # ╔═╡ Cell order:
 # ╟─d088c772-c7b4-11eb-1796-7365ee1abe49
 # ╟─995980f5-aa29-46a1-834e-9458c71f8914
 # ╟─e02bb839-dbe3-4e05-ad48-e39020d605d1
 # ╟─b85daaf1-d07b-44d0-9cef-cc19087d792d
+# ╟─79e973b5-2cb2-4c3b-af9d-a44307fdd659
 # ╟─26ff713f-9ab8-460d-a748-bca8217d4ee5
 # ╟─5bd7385d-afa7-49ae-83a7-6879c48c770e
 # ╟─2ff88b3a-9ed1-4495-93d7-75945b1ca9e7
@@ -345,8 +407,13 @@ end
 # ╟─d1ed848a-6221-4386-8066-83b1b6ede92f
 # ╟─6f07a125-7801-4f53-8372-39a2e34d87be
 # ╟─0b1e0eb1-8188-49b1-ac38-a14b51e2f1b8
-# ╠═58bc4235-e61b-4c9a-8ede-3633e1c2f7a9
+# ╟─58bc4235-e61b-4c9a-8ede-3633e1c2f7a9
+# ╟─df79f3a8-4d99-46a2-acd2-838f6e442526
 # ╟─ff7c5f94-363e-442d-b76b-0403608d0cb9
-# ╠═df79f3a8-4d99-46a2-acd2-838f6e442526
-# ╟─b3d1ea8a-01d1-4b2a-a82c-fa5b90574082
-# ╠═7cc4957a-3d33-4034-80af-892b863aece9
+# ╟─0cc70b6e-8f0c-44ac-a83a-2d82e4db3348
+# ╟─8b05bd01-1ba7-4f8a-80cc-bdc5a69024f9
+# ╟─56fbe58f-facd-4922-b7cf-8cbadb52be83
+# ╟─77c82d92-3331-4217-b8de-153ea94bfbc8
+# ╟─b6dd59bd-cb71-44b2-8a69-a0b04bb69664
+# ╟─952dce52-9950-4b66-9348-f804b2887fdf
+# ╟─8347ecd2-305d-4a81-9ba0-8fefc0d01db2
