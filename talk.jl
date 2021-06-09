@@ -29,7 +29,6 @@ begin
 	
 	# specific functionality from ML stack
 	using MLJ: @load, coerce, Multiclass
-	using LossFunctions: value, MisclassLoss, AggMode
 	
 	# skip prompt to download data dependencies
 	ENV["DATADEPS_ALWAYS_ACCEPT"] = "true"
@@ -143,13 +142,13 @@ Thanks to **Julia's multiple-dispatch**, we were able to achieve a very **clean 
 # ╔═╡ 89bb5a1c-d905-4b3b-81ff-343dbf14d306
 begin
 	# table with 1000 measurements of φ and κ and Sₒ
-	𝒯 = (φ = rand(1000), κ = rand(1000), Sₒ = rand(1000))
+	tab = (φ = rand(1000), κ = rand(1000), Sₒ = rand(1000))
 	
 	# domain with 1000 finite elements
-	𝒟 = CartesianGrid(10, 10, 10)
+	dom = CartesianGrid(10, 10, 10)
 	
 	# combine table with domain
-	rock = georef(𝒯, 𝒟)
+	rock = georef(tab, dom)
 end
 
 # ╔═╡ fa553a82-6f35-4d6e-845c-a97cd54be7f6
@@ -184,15 +183,12 @@ begin
 		download("https://people.sc.fsu.edu/~jburkardt/data/ply/beethoven.ply")
 	)
 	
-	# compute attributes on triangles
-	𝒜 = log.(area.(ℳ))
-	
-	# combine attribute table with mesh
-	👤 = georef((𝒜 = 𝒜,), ℳ)
+	# assign log-area of triangles to mesh
+	👤 = georef((area = log.(area.(ℳ)),), ℳ)
 end
 
 # ╔═╡ 9f1128e8-13ae-4334-bb9f-cc718e80d024
-viz(👤, variable = :𝒜)
+viz(👤, variable = :area)
 
 # ╔═╡ 7df28235-efaf-42f9-9943-c7d452dfd347
 md"""
@@ -206,10 +202,10 @@ BRA = GeoTables.gadm("BRA", children = true)
 # ╔═╡ 472ba4c4-4d03-48f8-81ba-0ebe9b78d635
 let
 	# compute attributes per state
-	table = (letters = length.(BRA.NAME_1),)
+	attr = (letters = length.(BRA.NAME_1),)
 	
-	# georeference table with states
-	🇧🇷 = georef(table, domain(BRA))
+	# combine attributes with states
+	🇧🇷 = georef(attr, domain(BRA))
 	
 	# visualize states in different color
 	viz(🇧🇷, variable = :letters)
@@ -233,13 +229,13 @@ md"""
 
 Let's recall the definition of well-posed learning problems:
 
-> **Definition ([Mitchell 1997](http://www.cs.cmu.edu/~tom/mlbook.html)):** A computer program is said to **learn** from experience $$\mathcal{E}$$ with respect to some class of tasks $$\mathcal{T}$$ and performance measure $$\mathcal{P}$$, if its performance at tasks in $$\mathcal{T}$$, as measured by $$\mathcal{P}$$, improves with experience $$\mathcal{E}$$.
+> **Definition ([Mitchell 1997](http://www.cs.cmu.edu/~tom/mlbook.html)):** A computer program is said to **learn** from experience $\mathcal{E}$ with respect to some class of tasks $\mathcal{T}$ and performance measure $\mathcal{P}$, if its performance at tasks in $\mathcal{T}$, as measured by $\mathcal{P}$, improves with experience $\mathcal{E}$.
 
 **Example:** classical statistical learning via empirical risk minimization
 
 $$\hat{f} = \arg\min_{h\in\mathcal{H}} \mathbb{E}_{(\mathbf{x},y) \sim \Pr}\left[\mathcal{L}(y, h(\mathbf{x}))\right] \approx \frac{1}{n} \sum_{i=1}^n \mathcal{L}(y^{(i)},h(\mathbf{x}^{(i)}))$$
 
-where $$\mathcal{E}$$ is a data set with $$n$$ samples, $$\mathcal{P}$$ is the empirical risk and $$\mathcal{T}$$ is a classical learning task such as regression or classification.
+where $\mathcal{E}$ is a data set with $n$ samples, $\mathcal{P}$ is the empirical risk and $\mathcal{T}$ is a classical learning task such as regression or classification.
 
 Assumptions which do **not** hold in geospatial applications:
 
@@ -257,7 +253,7 @@ Suppose we are given a crop classification model:
 - **features ($$\mathbf{x}$$):** bands of satellite image
 - **target ($$y$$):** crop type (soy, corn, ...)
 
-and are asked to estimate its **generalization error** w.r.t. a *green field* (South East) knowing that annotations are only available at a nearby *brown field* (North West):
+and are asked to estimate its **generalization error** w.r.t. a *target domain* knowing that annotations of crop type are only available at a nearby *source domain*:
 """
 
 # ╔═╡ 58bc4235-e61b-4c9a-8ede-3633e1c2f7a9
@@ -272,14 +268,14 @@ begin
 	Ωₛ, Ωₜ = split(Ω, 0.2, (1.0, -1.0))
 	
 	# visualize geospatial domains
-	viz(domain(Ωₛ), elementcolor = :saddlebrown,
+	viz(domain(Ωₛ), elementcolor = :royalblue,
 		axis = (xlabel = "longitude", ylabel = "latitude"))
-	viz!(domain(Ωₜ), elementcolor = :green)
+	viz!(domain(Ωₜ), elementcolor = :gray)
 	WGL.lines!([(270,660), (720,1140)],
 		       linestyle = :dash, color = :black)
-	WGL.annotations!(["brown field (𝒟ₛ)","green field (𝒟ₜ)"],
-		             [WGL.Point(500,1200), WGL.Point(-50,300)],
-		             textsize = 30, color = [:saddlebrown,:green])
+	WGL.annotations!(["source (𝒟ₛ)","target (𝒟ₜ)"],
+		             [WGL.Point(500,1200), WGL.Point(100,300)],
+		             textsize = 30, color = [:royalblue,:gray])
 	WGL.current_figure()
 end
 
@@ -310,7 +306,7 @@ begin
 	Ω̂ₜ = solve(𝓅, 𝓁)
 	
 	# actual error of the model
-	ϵ = value(ℒ, Ωₜ.crop, Ω̂ₜ.crop, AggMode.Mean())
+	ϵ = mean(ℒ(Ωₜ.crop, Ω̂ₜ.crop))
 end;
 
 # ╔═╡ ff7c5f94-363e-442d-b76b-0403608d0cb9
@@ -356,7 +352,7 @@ end
 md"""
 #### What happened?
 
-Classical cross-validation (CV) relies heavily on i.i.d. samples and equal distributions:
+Classical cross-validation (CV) relies heavily on the previously stated assumptions in order to:
 
 1. hold-out points at **random** (red points)
 2. learn model with remaining points (other colors)
@@ -372,13 +368,53 @@ LocalResource("assets/cv.png")
 md"""
 ### Geostatistical validation
 
-In an attempt to avoid the super optimism of CV, the spatial statistics community proposed various alternative methods such as block cross-validation (BCV) and leave-ball-out (LBO).
+In order to avoid the super optimism of CV, the spatial statistics community proposed various alternative methods such as block cross-validation (BCV) and leave-ball-out (LBO).
 
 These methods rely on **systematic partitions** of the source domain, which are often parameterized with a spatial correlation length $r > 0$.
 """
 
 # ╔═╡ 8347ecd2-305d-4a81-9ba0-8fefc0d01db2
 LocalResource("assets/bcv-lbo.png")
+
+# ╔═╡ bf339a05-c886-4d28-9db8-ed03a0d6dce6
+md"""
+**GeoStats.jl** provides extremely efficient parallel implementations for all these methods. We were able to exploit k-d trees, multiple threads and other concepts from high-performance computing that are readily available in the language.
+
+Thanks to **Julia's expressive power**, we can create advanced pipelines with just a few lines of code:
+"""
+
+# ╔═╡ 51c1ab1b-1984-4198-9ccd-a3e3810cbbc6
+let
+	# learning task: satellite bands → crop type
+	𝓉 = ClassificationTask((:band1, :band2, :band3, :band4), :crop)
+	
+	# learning problem: train in Ωₛ and predict in Ωₜ
+	𝓅 = LearningProblem(Ωₛ, Ωₜ, 𝓉)
+	
+	# learning model: decision tree
+	𝒽 = @load DecisionTreeClassifier pkg=DecisionTree
+	
+	# learning strategy: naive pointwise learning
+	𝓁 = PointwiseLearn(𝒽())
+	
+	# loss function: misclassification loss
+	ℒ = MisclassLoss()
+	
+	# block cross-validation with r = 50.
+	bcv = BlockCrossValidation(50., loss = Dict(:crop => ℒ))
+	
+	# estimate of generalization error
+	ϵ̂ = error(𝓁, 𝓅, bcv)[:crop]
+	
+	# train in Ωₛ and predict in Ωₜ
+	Ω̂ₜ = solve(𝓅, 𝓁)
+	
+	# actual error of the model
+	ϵ = mean(ℒ(Ωₜ.crop, Ω̂ₜ.crop))
+	
+	# display estimate and actual error
+	(ϵ̂ = ϵ̂, ϵ = ϵ)
+end
 
 # ╔═╡ Cell order:
 # ╟─d088c772-c7b4-11eb-1796-7365ee1abe49
@@ -417,3 +453,5 @@ LocalResource("assets/bcv-lbo.png")
 # ╟─b6dd59bd-cb71-44b2-8a69-a0b04bb69664
 # ╟─952dce52-9950-4b66-9348-f804b2887fdf
 # ╟─8347ecd2-305d-4a81-9ba0-8fefc0d01db2
+# ╟─bf339a05-c886-4d28-9db8-ed03a0d6dce6
+# ╠═51c1ab1b-1984-4198-9ccd-a3e3810cbbc6

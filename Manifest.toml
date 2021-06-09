@@ -297,9 +297,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[Distributions]]
 deps = ["FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns"]
-git-tree-sha1 = "a837fdf80f333415b69684ba8e8ae6ba76de6aaa"
+git-tree-sha1 = "64a3e756c44dcf33bd33e7f500113d9992a02e92"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.24.18"
+version = "0.25.2"
 
 [[DocStringExtensions]]
 deps = ["LibGit2", "Markdown", "Pkg", "Test"]
@@ -506,10 +506,10 @@ uuid = "220efe8a-9139-4e14-a4fa-f683d572f4c5"
 version = "0.3.6"
 
 [[GeoStats]]
-deps = ["GeoClustering", "GeoEstimation", "GeoLearning", "GeoSimulation", "GeoStatsBase", "KrigingEstimators", "Meshes", "PointPatterns", "Reexport", "Variography"]
-git-tree-sha1 = "9fc03f08631433f13553ae5432bd7720ca9253e7"
+deps = ["DensityRatioEstimation", "Distances", "GeoClustering", "GeoEstimation", "GeoLearning", "GeoSimulation", "GeoStatsBase", "KrigingEstimators", "LossFunctions", "Meshes", "PointPatterns", "Reexport", "Variography"]
+path = "/home/juliohm/.julia/dev/GeoStats"
 uuid = "dcc97b0b-8ce5-5539-9008-bb190f959ef6"
-version = "0.25.1"
+version = "0.25.2"
 
 [[GeoStatsBase]]
 deps = ["AverageShiftedHistograms", "CSV", "CategoricalArrays", "Combinatorics", "DensityRatioEstimation", "Distances", "Distributed", "Distributions", "LinearAlgebra", "LossFunctions", "MLJModelInterface", "Meshes", "Optim", "Parameters", "RecipesBase", "ScientificTypes", "StaticArrays", "Statistics", "StatsBase", "TableOperations", "Tables", "Transducers", "TypedTables"]
@@ -845,9 +845,9 @@ uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[LossFunctions]]
 deps = ["LearnBase", "Markdown", "RecipesBase", "StatsBase"]
-git-tree-sha1 = "b80cb986a1e77cd5cd7e10dc1e8f7655490e01bb"
+path = "/home/juliohm/.julia/dev/LossFunctions"
 uuid = "30fc2ffe-d236-52d8-8643-a9d8f7c094a7"
-version = "0.7.0"
+version = "0.7.1"
 
 [[MKL_jll]]
 deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
