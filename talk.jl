@@ -4,6 +4,15 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        el
+    end
+end
+
 # ╔═╡ d088c772-c7b4-11eb-1796-7365ee1abe49
 begin
 	# instantiate environment
@@ -21,14 +30,15 @@ begin
 	# load packages used in this talk
 	using GeoStats
 	using GeoTables
+	using DataFrames
 	using MeshViz
 	using PlutoUI
 	using FileIO
 	using PlyIO
 	using CSV
 	
-	# specific functionality from ML stack
-	using MLJ: @load, coerce, Multiclass
+	# load classical ML stack
+	import MLJ
 	
 	# skip prompt to download data dependencies
 	ENV["DATADEPS_ALWAYS_ACCEPT"] = "true"
@@ -65,6 +75,13 @@ md"""
 # Geostatistical Learning
 
 #### Challenges and Opportunities
+
+##### Package:
+"""
+
+# ╔═╡ 432d56b2-bd58-43bd-a9ed-0e8e42e2303b
+html"""
+<img src="https://github.com/JuliaEarth/GeoStats.jl/blob/master/docs/src/assets/logo-text.svg?raw=true" width=350>
 """
 
 # ╔═╡ 79e973b5-2cb2-4c3b-af9d-a44307fdd659
@@ -76,9 +93,9 @@ Júlio Hoffimann, Ph.D. ([julio.hoffimann@impa.br](mailto:julio.hoffimann@impa.b
 Instituto de Matemática pura e Aplicada
 """
 
-# ╔═╡ 26ff713f-9ab8-460d-a748-bca8217d4ee5
+# ╔═╡ 1e4e92a3-549b-46ee-905d-3dc4c82b12de
 html"""
-<img src="https://icm2018.impa.br/images/logo-impa.png", width=150>
+<img src="https://icm2018.impa.br/images/logo-impa.png" width=120>
 """
 
 # ╔═╡ 5bd7385d-afa7-49ae-83a7-6879c48c770e
@@ -104,7 +121,7 @@ From Greek *geō-* the term **Geo** means Earth as in **Geo**logy, **Geo**physic
 
 **Geo** can also mean Geospatial as in **Geo**spatial sciences and Computational **Geo**metry.
 
-> In [GeoStats.jl](https://github.com/JuliaEarth/GeoStats.jl) we adopt the second connotation and refer to **geo**statistics as the branch of statistics developed for **geo**spatial data.
+> In this talk we adopt the second connotation and refer to **geo**statistics as the branch of statistics developed for **geo**spatial data.
 """
 
 # ╔═╡ 75797373-7126-4209-883d-41261ba211eb
@@ -119,6 +136,8 @@ Very generally, **geo**spatial data is the combination of:
 The concept of **table** is widespread. We support any table implementing the [Tables.jl](https://github.com/JuliaData/Tables.jl) interface, including named tuples, dataframes, SQL databases, Excel spreadsheets, Apache Arrow, etc.
 
 By geospatial **domain** we mean any *discretization* of a region in physical space. We support any domain implementing the [Meshes.jl]() interface, including Cartesian grids, point sets, collections of geometries and general unstructured meshes.
+
+Thanks to [Makie.jl](https://github.com/JuliaPlots/Makie.jl), we can visualize all these domains directly on the GPU:
 """
 
 # ╔═╡ dc2345d4-b338-4c3c-aaa4-789988832406
@@ -229,7 +248,7 @@ md"""
 
 Let's recall the definition of well-posed learning problems:
 
-> **Definition ([Mitchell 1997](http://www.cs.cmu.edu/~tom/mlbook.html)):** A computer program is said to **learn** from experience $\mathcal{E}$ with respect to some class of tasks $\mathcal{T}$ and performance measure $\mathcal{P}$, if its performance at tasks in $\mathcal{T}$, as measured by $\mathcal{P}$, improves with experience $\mathcal{E}$.
+> **Definition ([Mitchell 1997](http://www.cs.cmu.edu/~tom/mlbook.html)).** A computer program is said to **learn** from experience $\mathcal{E}$ with respect to some class of tasks $\mathcal{T}$ and performance measure $\mathcal{P}$, if its performance at tasks in $\mathcal{T}$, as measured by $\mathcal{P}$, improves with experience $\mathcal{E}$.
 
 **Example:** classical statistical learning via empirical risk minimization
 
@@ -246,7 +265,7 @@ Assumptions which do **not** hold in geospatial applications:
 
 # ╔═╡ 0b1e0eb1-8188-49b1-ac38-a14b51e2f1b8
 md"""
-### Can't hold onto assumptions ⚠️
+### Can't hold onto classical assumptions
 
 Suppose we are given a crop classification model:
 
@@ -262,7 +281,7 @@ begin
 	data = georef(CSV.File("data/agriculture.csv"), (:x, :y))
 	
 	# adjust scientific type of crop column
-	Ω = coerce(data, :crop => Multiclass)
+	Ω = MLJ.coerce(data, :crop => MLJ.Multiclass)
 	
 	# 20%/80% split along the (1, -1) direction
 	Ωₛ, Ωₜ = split(Ω, 0.2, (1.0, -1.0))
@@ -288,7 +307,7 @@ begin
 	𝓅 = LearningProblem(Ωₛ, Ωₜ, 𝓉)
 	
 	# learning model: decision tree
-	𝓂 = @load DecisionTreeClassifier pkg=DecisionTree
+	𝓂 = @MLJ.load DecisionTreeClassifier pkg=DecisionTree
 	
 	# learning strategy: naive pointwise learning
 	𝓁 = PointwiseLearn(𝓂())
@@ -324,7 +343,7 @@ LocalResource("assets/cvsetup.png")
 
 # ╔═╡ 8b05bd01-1ba7-4f8a-80cc-bdc5a69024f9
 md"""
-#### Result:
+#### Result
 
 The model's estimated error is **$(round(ϵ̂cv*100, digits=2))%** misclassification. However, when we deploy the model in the *green field* $\mathcal{D}_t$ the error is much higher with **$(round(ϵ*100, digits=2))%** of the samples misclassified. The error is **$(round(ϵ / ϵ̂cv, digits=2))** times higher than expected.
 """
@@ -366,7 +385,7 @@ LocalResource("assets/cv.png")
 
 # ╔═╡ 952dce52-9950-4b66-9348-f804b2887fdf
 md"""
-### Geostatistical validation
+#### Geostatistical validation
 
 In order to avoid the super optimism of CV, the spatial statistics community proposed various alternative methods such as block cross-validation (BCV) and leave-ball-out (LBO).
 
@@ -378,7 +397,7 @@ LocalResource("assets/bcv-lbo.png")
 
 # ╔═╡ bf339a05-c886-4d28-9db8-ed03a0d6dce6
 md"""
-**GeoStats.jl** provides extremely efficient parallel implementations for all these methods. We were able to exploit k-d trees, multiple threads and other concepts from high-performance computing that are readily available in the language.
+**GeoStats.jl** provides extremely efficient parallel implementations for all these methods. We were able to exploit multiple threads and other concepts from high-performance computing that are readily available in the language.
 
 Thanks to **Julia's expressive power**, we can create advanced pipelines with just a few lines of code:
 """
@@ -392,7 +411,7 @@ let
 	𝓅 = LearningProblem(Ωₛ, Ωₜ, 𝓉)
 	
 	# learning model: decision tree
-	𝒽 = @load DecisionTreeClassifier pkg=DecisionTree
+	𝒽 = MLJ.@load DecisionTreeClassifier pkg=DecisionTree
 	
 	# learning strategy: naive pointwise learning
 	𝓁 = PointwiseLearn(𝒽())
@@ -400,8 +419,8 @@ let
 	# loss function: misclassification loss
 	ℒ = MisclassLoss()
 	
-	# block cross-validation with r = 50.
-	bcv = BlockCrossValidation(50., loss = Dict(:crop => ℒ))
+	# block cross-validation with r = 30.
+	bcv = BlockCrossValidation(30., loss = Dict(:crop => ℒ))
 	
 	# estimate of generalization error
 	ϵ̂ = error(𝓁, 𝓅, bcv)[:crop]
@@ -416,13 +435,121 @@ let
 	(ϵ̂ = ϵ̂, ϵ = ϵ)
 end
 
+# ╔═╡ 1e8f1812-b7ad-42a8-b9f0-5616fae25f39
+md"""
+We support any learning model implementing the [MLJ.jl](https://github.com/alan-turing-institute/MLJ.jl) interface, which means all learning models from [scikit-learn](https://scikit-learn.org) and more:
+"""
+
+# ╔═╡ b54eb16c-aa1d-448e-823a-2a9ebe645205
+MLJ.models() |> DataFrame
+
+# ╔═╡ e1334779-0753-4fe1-90dd-25b638c832b2
+md"""
+### A new learning framework (Hoffimann et al. 2021)
+
+More generally, we propose a new framework to advance this research:
+
+>**Definition (GL).** Given a source geospatial domain $\mathcal{D}_s$ and a source learning task $\mathcal{T}_s$, a target geospatial domain $\mathcal{D}_t$ and a target learning task $\mathcal{T}_t$, **Geostatistical Learning** consists of learning $\mathcal{T}_t$ over $\mathcal{D}_t$ using the knowledge acquired while learning $\mathcal{T}_s$ over $\mathcal{D}_s$, assuming that the data in $\mathcal{D}_s$ and $\mathcal{D}_t$ are a single realization of the involved geospatial processes.
+"""
+
+# ╔═╡ 689a31fa-a7ff-42c3-abdb-4cce2365abd4
+html"""
+<p align="center">
+    <img src="https://i.postimg.cc/d3BpsStQ/domains.png">
+</p>
+"""
+
+# ╔═╡ 063407c4-4119-44e3-8f1c-9dc9c5aba5b1
+md"""
+Geostatistical Learning (or GL for short) is a **necessary change of perspective** in order to evolve existing statistical methodologies into new methodologies that are useful for geospatial data.
+
+To clarify this statement, we share real-world examples in the next section that would be too difficult to express and solve with the classical framework.
+"""
+
+# ╔═╡ 15c012fc-30d1-419b-a644-b2246d392c61
+md"""
+#### Geostatistical clustering
+
+Suppose we are given a micro-CT image such as the image by [Niu et al. 2020.](http://www.digitalrocksportal.org/projects/324), and are asked to segment it into homogeneous geobodies before proceeding with additional statistical analysis:
+"""
+
+# ╔═╡ 2fd86dfd-382a-4da3-b628-774e0f47f68e
+begin
+	μCT = load("data/muCT.tif")
+	
+	ℛ = georef((μCT = μCT,))
+	
+	viz(ℛ, variable = :μCT)
+end
+
+# ╔═╡ 90ef4204-7646-4b49-9fa0-f2be2edf10ad
+md"""
+The segmentation problem can sometimes be solved via unsupervised clustering. However, classical clustering methods such as K-means fail to produce *contiguous* clusters due to the noise in the image:
+"""
+
+# ╔═╡ 72900a48-74d3-4f53-8ada-75cf206f70b8
+md"""
+Number of clusters: $(@bind k PlutoUI.Slider(20:5:30, show_value=true))
+"""
+
+# ╔═╡ 2d266c6e-c6b9-4ec7-80ce-4cdbd51d046f
+let
+	# load classical K-means
+	kmeans = @MLJ.load KMeans pkg=Clustering
+	
+	# convert color to floating point
+	F = Float64.(μCT)
+	
+	# feature matrix (single column)
+	X = reshape(F, length(F), 1)
+	
+	# instantiate machine
+	mach = MLJ.machine(kmeans(k = k), X)
+	
+	# fit machine to data
+	MLJ.fit!(mach)
+	
+	# cluster assignments
+	c = MLJ.predict(mach)
+	
+	# georeference the assignments
+	𝒞 = georef((c = reshape(c, size(μCT)),))
+	
+	# visualize clusters
+	viz(𝒞, variable = :c)
+end
+
+# ╔═╡ 6117b062-4bf7-499a-9423-313b680f1177
+md"""
+We provide *geostatistical clustering* alternatives to address this issue. For example, we provide a generalization of Simple Linear Iterative Clustering (SLIC) that works with any geospatial data:
+"""
+
+# ╔═╡ a787f0dc-aeb0-4959-9f74-be9dc3ade1ad
+begin
+	# georeference the micro-CT image
+	ℐ = georef((μCT = Float64.(μCT),))
+	
+	# request k = 45 contiguous clusters
+	𝒞 = cluster(ℐ, SLIC(45, 0.07))
+end;
+
+# ╔═╡ eda5e7da-e51f-4fc9-800e-cb128e082513
+let
+	fig = WGL.Figure(resolution = (650,300))
+	viz(fig[1,1], ℛ, variable = :μCT)
+	viz(fig[1,2], 𝒞, variable = :cluster)
+	WGL.linkaxes!(filter(x -> x isa WGL.Axis, fig.content)...)
+	fig
+end
+
 # ╔═╡ Cell order:
 # ╟─d088c772-c7b4-11eb-1796-7365ee1abe49
 # ╟─995980f5-aa29-46a1-834e-9458c71f8914
 # ╟─e02bb839-dbe3-4e05-ad48-e39020d605d1
 # ╟─b85daaf1-d07b-44d0-9cef-cc19087d792d
+# ╟─432d56b2-bd58-43bd-a9ed-0e8e42e2303b
 # ╟─79e973b5-2cb2-4c3b-af9d-a44307fdd659
-# ╟─26ff713f-9ab8-460d-a748-bca8217d4ee5
+# ╟─1e4e92a3-549b-46ee-905d-3dc4c82b12de
 # ╟─5bd7385d-afa7-49ae-83a7-6879c48c770e
 # ╟─2ff88b3a-9ed1-4495-93d7-75945b1ca9e7
 # ╟─75797373-7126-4209-883d-41261ba211eb
@@ -455,3 +582,16 @@ end
 # ╟─8347ecd2-305d-4a81-9ba0-8fefc0d01db2
 # ╟─bf339a05-c886-4d28-9db8-ed03a0d6dce6
 # ╠═51c1ab1b-1984-4198-9ccd-a3e3810cbbc6
+# ╟─1e8f1812-b7ad-42a8-b9f0-5616fae25f39
+# ╟─b54eb16c-aa1d-448e-823a-2a9ebe645205
+# ╟─e1334779-0753-4fe1-90dd-25b638c832b2
+# ╟─689a31fa-a7ff-42c3-abdb-4cce2365abd4
+# ╟─063407c4-4119-44e3-8f1c-9dc9c5aba5b1
+# ╟─15c012fc-30d1-419b-a644-b2246d392c61
+# ╟─2fd86dfd-382a-4da3-b628-774e0f47f68e
+# ╟─90ef4204-7646-4b49-9fa0-f2be2edf10ad
+# ╟─72900a48-74d3-4f53-8ada-75cf206f70b8
+# ╟─2d266c6e-c6b9-4ec7-80ce-4cdbd51d046f
+# ╟─6117b062-4bf7-499a-9423-313b680f1177
+# ╠═a787f0dc-aeb0-4959-9f74-be9dc3ade1ad
+# ╟─eda5e7da-e51f-4fc9-800e-cb128e082513
