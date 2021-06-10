@@ -293,9 +293,9 @@ uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
 version = "1.0.2"
 
 [[DiskArrays]]
-git-tree-sha1 = "2c062352392800f95c19018097e7b3838f9346fb"
+git-tree-sha1 = "326cfc817660c1e8b04a7ba769fff723b56288b6"
 uuid = "3c3547ce-8d99-4f5e-a174-61eb10b00ae3"
-version = "0.2.9"
+version = "0.2.10"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Statistics", "StatsAPI"]
@@ -484,7 +484,7 @@ version = "3.9.0+0"
 
 [[GeoClustering]]
 deps = ["Distances", "LinearAlgebra", "Meshes", "Statistics", "TableOperations", "Tables"]
-path = "/home/juliohm/.julia/dev/GeoClustering"
+git-tree-sha1 = "30199d291102f123faf8086df6d9ab08abec5a99"
 uuid = "7472b188-6dde-460e-bd07-96c4bc049f7e"
 version = "0.1.5"
 
@@ -519,7 +519,7 @@ version = "0.3.6"
 
 [[GeoStats]]
 deps = ["DensityRatioEstimation", "Distances", "GeoClustering", "GeoEstimation", "GeoLearning", "GeoSimulation", "GeoStatsBase", "KrigingEstimators", "LossFunctions", "Meshes", "PointPatterns", "Reexport", "Variography"]
-path = "/home/juliohm/.julia/dev/GeoStats"
+git-tree-sha1 = "3a31406b580b2b435940d894edf72d48380586df"
 uuid = "dcc97b0b-8ce5-5539-9008-bb190f959ef6"
 version = "0.25.2"
 
@@ -720,9 +720,9 @@ version = "1.8.2"
 
 [[JSServe]]
 deps = ["Base64", "CodecZlib", "Colors", "HTTP", "Hyperscript", "JSON3", "LinearAlgebra", "Markdown", "MsgPack", "Observables", "SHA", "Sockets", "Tables", "Test", "UUIDs", "WebSockets", "WidgetsBase"]
-git-tree-sha1 = "64dca3f9e8277e7253a1b5444136e41433c8f594"
+git-tree-sha1 = "91101a4b8ac8eefeed6ca8eb4f663fc660e4d9f9"
 uuid = "824d6782-a2ef-11e9-3a09-e5662e0c26f9"
-version = "1.2.2"
+version = "1.2.3"
 
 [[JpegTurbo_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -856,10 +856,10 @@ version = "0.2.4"
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[LossFunctions]]
-deps = ["LearnBase", "Markdown", "RecipesBase", "StatsBase"]
-path = "/home/juliohm/.julia/dev/LossFunctions"
+deps = ["InteractiveUtils", "LearnBase", "Markdown", "RecipesBase", "StatsBase"]
+git-tree-sha1 = "0f057f6ea90a84e73a8ef6eebb4dc7b5c330020f"
 uuid = "30fc2ffe-d236-52d8-8643-a9d8f7c094a7"
-version = "0.7.1"
+version = "0.7.2"
 
 [[MKL_jll]]
 deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
@@ -875,9 +875,9 @@ version = "0.16.4"
 
 [[MLJBase]]
 deps = ["CategoricalArrays", "ComputationalResources", "Dates", "DelimitedFiles", "Distributed", "Distributions", "InteractiveUtils", "InvertedIndices", "LinearAlgebra", "LossFunctions", "MLJModelInterface", "MLJScientificTypes", "Missings", "OrderedCollections", "Parameters", "PrettyTables", "ProgressMeter", "Random", "StatisticalTraits", "Statistics", "StatsBase", "Tables"]
-git-tree-sha1 = "4ee76d6ea3aa9dcfc46b1a388e7c31c1b4901e58"
+git-tree-sha1 = "05c6504fca7552bb83e28d98eb3dd48d26b8fc5e"
 uuid = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
-version = "0.18.9"
+version = "0.18.10"
 
 [[MLJClusteringInterface]]
 deps = ["Clustering", "Distances", "MLJModelInterface"]
@@ -941,9 +941,9 @@ version = "0.5.6"
 
 [[Makie]]
 deps = ["Animations", "Artifacts", "ColorBrewer", "ColorSchemes", "ColorTypes", "Colors", "Contour", "Distributions", "DocStringExtensions", "FFMPEG", "FileIO", "FixedPointNumbers", "Formatting", "FreeType", "FreeTypeAbstraction", "GeometryBasics", "GridLayoutBase", "ImageIO", "IntervalSets", "Isoband", "KernelDensity", "LinearAlgebra", "Markdown", "Match", "Observables", "Packing", "PlotUtils", "PolygonOps", "Printf", "Random", "Serialization", "Showoff", "SignedDistanceFields", "SparseArrays", "StaticArrays", "Statistics", "StatsBase", "StatsFuns", "StructArrays", "UnicodeFun"]
-git-tree-sha1 = "d53c0ece3c31da4f936884c55d6a140b7591184f"
+git-tree-sha1 = "121f8641845056c31ea478945c08a79fe00ab9c5"
 uuid = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
-version = "0.13.12"
+version = "0.13.14"
 
 [[MappedArrays]]
 git-tree-sha1 = "18d3584eebc861e311a552cbb67723af8edff5de"

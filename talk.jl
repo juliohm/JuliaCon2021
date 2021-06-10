@@ -59,7 +59,7 @@ begin
 		x = ply["vertex"]["x"]
   		y = ply["vertex"]["y"]
   		z = ply["vertex"]["z"]
-  		points = Point.(x, y, z)
+  		points = Point3.(x, y, z)
   		connec = [connect(Tuple(c.+1)) for c in ply["face"]["vertex_indices"]]
   		SimpleMesh(points, connec)
 	end
@@ -121,21 +121,21 @@ From Greek *geō-* the term **Geo** means Earth as in **Geo**logy, **Geo**physic
 
 **Geo** can also mean Geospatial as in **Geo**spatial sciences and Computational **Geo**metry.
 
-> In this talk we adopt the second connotation and refer to **geo**statistics as the branch of statistics developed for **geo**spatial data.
+> [GeoStats.jl](https://github.com/JuliaEarth/GeoStats.jl) is about the second connotation. We refer to **geo**statistics as the branch of statistics developed for **geo**spatial data (functions on **geo**metrical spaces).
 """
 
 # ╔═╡ 75797373-7126-4209-883d-41261ba211eb
 md"""
 ## But what is geospatial data?
 
-Very generally, **geo**spatial data is the combination of:
+Very generally, (discrete) **geo**spatial data is the combination of:
 
-1. a **table** of attributes with
-2. a geospatial **domain**
+1. a **table** of attributes (or features) with
+2. a discretization of a geospatial **domain**
 
 The concept of **table** is widespread. We support any table implementing the [Tables.jl](https://github.com/JuliaData/Tables.jl) interface, including named tuples, dataframes, SQL databases, Excel spreadsheets, Apache Arrow, etc.
 
-By geospatial **domain** we mean any *discretization* of a region in physical space. We support any domain implementing the [Meshes.jl]() interface, including Cartesian grids, point sets, collections of geometries and general unstructured meshes.
+Given a **domain** (or region) in physical space, we can discretize it into *elements*. We support any domain implementing the [Meshes.jl]() interface, including Cartesian grids, point sets, collections of geometries and general unstructured meshes.
 
 Thanks to [Makie.jl](https://github.com/JuliaPlots/Makie.jl), we can visualize all these domains directly on the GPU:
 """
@@ -146,14 +146,14 @@ let
 	grid = CartesianGrid(10, 10, 10)
 	
 	# visualize 3D grid on GPU
-	viz(grid)
+	viz(grid, showfacets = true)
 end
 
 # ╔═╡ d52c37cb-232a-49d3-a6af-ccad1405ddb8
 md"""
 ## Examples of geospatial data
 
-Thanks to **Julia's multiple-dispatch**, we were able to achieve a very **clean user interface**, including a universal `georef` function to combine various types of tables and geospatial domains.
+GeoStats.jl has a very **clean user interface**, including a universal `georef` function to combine various types of tables and geospatial domains. Thanks to **Julia's multiple-dispatch**, we could design very sophiscated functionality without compromising **user experience**.
 
 ### 3D grid data
 """
@@ -197,17 +197,15 @@ md"""
 
 # ╔═╡ 4527d107-2849-4b80-9c52-3db6fc888ec2
 begin
-	# download mesh file
-	ℳ = loadply(
-		download("https://people.sc.fsu.edu/~jburkardt/data/ply/beethoven.ply")
-	)
+	# load statue of Beethoven
+	👤 = loadply("data/beethoven.ply")
 	
 	# assign log-area of triangles to mesh
-	👤 = georef((area = log.(area.(ℳ)),), ℳ)
+	mesh = georef((area = log.(area.(👤)),), 👤)
 end
 
 # ╔═╡ 9f1128e8-13ae-4334-bb9f-cc718e80d024
-viz(👤, variable = :area)
+viz(mesh, variable = :area, showfacets = true)
 
 # ╔═╡ 7df28235-efaf-42f9-9943-c7d452dfd347
 md"""
@@ -227,24 +225,14 @@ let
 	🇧🇷 = georef(attr, domain(BRA))
 	
 	# visualize states in different color
-	viz(🇧🇷, variable = :letters)
+	viz(🇧🇷, variable = :letters, showfacets = true)
 end
-
-# ╔═╡ a076baa5-6442-4f27-920d-5788b0b23fa6
-md"""
-### More examples
-
-Please check the [GeoStatsTutorials](https://github.com/JuliaEarth/GeoStatsTutorials) for more examples and features:
-"""
-
-# ╔═╡ d1ed848a-6221-4386-8066-83b1b6ede92f
-html"""
-<iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=PLsH4hc788Z1f1e61DN3EV9AhDlpbhhanw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-"""
 
 # ╔═╡ 6f07a125-7801-4f53-8372-39a2e34d87be
 md"""
 ## Learning from geospatial data
+
+### Classical learning framework
 
 Let's recall the definition of well-posed learning problems:
 
@@ -332,7 +320,7 @@ end;
 md"""
 Let's follow the traditional k-fold cross-validation methodology:
 
-1. subdivide the *brown field* $\mathcal{D}_s$ into k random folds
+1. subdivide the *source domain* $\mathcal{D}_s$ into k random folds
 2. average the empirical risk over the folds
 
 $$\hat\epsilon(h) = \frac{1}{k} \sum_{j=1}^k \frac{1}{|\mathcal{D}_s^{(j)}|} \int_{\mathcal{D}_s^{(j)}} \mathcal{L}(y_\mathbf{u}, h(\mathbf{x}_\mathbf{u}))d\mathbf{u}$$
@@ -345,7 +333,7 @@ LocalResource("assets/cvsetup.png")
 md"""
 #### Result
 
-The model's estimated error is **$(round(ϵ̂cv*100, digits=2))%** misclassification. However, when we deploy the model in the *green field* $\mathcal{D}_t$ the error is much higher with **$(round(ϵ*100, digits=2))%** of the samples misclassified. The error is **$(round(ϵ / ϵ̂cv, digits=2))** times higher than expected.
+The model's estimated error is **$(round(ϵ̂cv*100, digits=2))%** misclassification. However, when we deploy the model in the *target domain* $\mathcal{D}_t$ the error is much higher with **$(round(ϵ*100, digits=2))%** of the samples misclassified. The error is **$(round(ϵ / ϵ̂cv, digits=2))** times higher than expected.
 """
 
 # ╔═╡ 56fbe58f-facd-4922-b7cf-8cbadb52be83
@@ -447,7 +435,7 @@ MLJ.models() |> DataFrame
 md"""
 ### A new learning framework (Hoffimann et al. 2021)
 
-More generally, we propose a new framework to advance this research:
+More generally, we propose a new framework to advance the research:
 
 >**Definition (GL).** Given a source geospatial domain $\mathcal{D}_s$ and a source learning task $\mathcal{T}_s$, a target geospatial domain $\mathcal{D}_t$ and a target learning task $\mathcal{T}_t$, **Geostatistical Learning** consists of learning $\mathcal{T}_t$ over $\mathcal{D}_t$ using the knowledge acquired while learning $\mathcal{T}_s$ over $\mathcal{D}_s$, assuming that the data in $\mathcal{D}_s$ and $\mathcal{D}_t$ are a single realization of the involved geospatial processes.
 """
@@ -542,6 +530,79 @@ let
 	fig
 end
 
+# ╔═╡ 2190d7f4-fd0b-4c8f-ad9c-cb960b158362
+md"""
+#### Learning on meshes
+
+Geostatistical methods exploit **topological relations** (e.g. neighborhoods) on meshes to constrain the learning process and produce more sensible results with real-world geospatial data.
+
+GeoStats.jl enables **very advanced learning pipelines** on general unstructured meshes. Thanks to **Julia's high-performance**, our implementations scale.
+
+##### Example
+
+Suppose we are given an airplane and a helicopter model, and are asked to learn the distribution of [wind-chill index](https://en.wikipedia.org/wiki/Wind_chill#Original_model) (WCI) on the surface of these models given measurements of wind velocity $v$ at specific points (e.g. pitot tubes) and a reference air temperature $T_a$:
+
+$$WCI = (10\sqrt v - v + 10.5) \cdot (33 - T_a)$$
+
+Let's assume that the airplane flies at moderate speeds and that we can interpolate the wind measurements with simple *geostatistical estimation*:
+"""
+
+# ╔═╡ 303cbee7-ad48-4cf2-9808-77016b0f6833
+begin
+	# load airplane model
+	✈ = loadply("data/airplane.ply")
+	
+	# wind velocity on two sensors on the wings
+	𝒮 = georef((v=[1.0, 2.0],), [(1300.0,600.0,50.0), (500.0,600.0,50.0)])
+	
+	# geostatistical estimation problem
+	ℯ = EstimationProblem(𝒮, ✈, :v)
+	
+	# pick one of the estimation solvers
+	𝓀 = Kriging(:v => (variogram=GaussianVariogram(range=300.0),))
+	
+	# interpolate wind velocity on the airplane
+	𝒱 = solve(ℯ, 𝓀)
+	
+	# visualize interpolation
+	viz(𝒱, variable = :v)
+end
+
+# ╔═╡ 6cba8ce5-48ef-4fd2-91bb-393f143742e7
+md"""
+Let's assume that we are more uncertain about the wind velocity on the helicopter due to intense vorticity. In this case, we simulate multiple realizations with *geostatistical simulation*:
+"""
+
+# ╔═╡ 2b9387d9-0daf-46b9-95ff-3effb1d544ef
+begin
+	# load helicopter model
+	🚁 = loadply("data/helicopter.ply")
+	
+	# geostatistical simulation problem
+	𝓈 = SimulationProblem(🚁, :v => Float64, 3)
+	
+	# pick one of the simulation solvers
+	ℊ = LUGS(:v => (variogram=GaussianVariogram(range=2.0),))
+	
+	# simulate wind velocity on the helicopter
+	ensemble = solve(𝓈, ℊ)
+end
+
+# ╔═╡ 5e01b043-2d34-4231-ae36-fe6ee663c289
+viz(ensemble[1], variable = :v)
+
+# ╔═╡ a076baa5-6442-4f27-920d-5788b0b23fa6
+md"""
+#### More examples
+
+Please check the [GeoStatsTutorials](https://github.com/JuliaEarth/GeoStatsTutorials) for more examples and features:
+"""
+
+# ╔═╡ d1ed848a-6221-4386-8066-83b1b6ede92f
+html"""
+<iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=PLsH4hc788Z1f1e61DN3EV9AhDlpbhhanw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+"""
+
 # ╔═╡ Cell order:
 # ╟─d088c772-c7b4-11eb-1796-7365ee1abe49
 # ╟─995980f5-aa29-46a1-834e-9458c71f8914
@@ -566,8 +627,6 @@ end
 # ╟─7df28235-efaf-42f9-9943-c7d452dfd347
 # ╠═330a3630-38fa-4948-9498-c336fb0dc8f5
 # ╠═472ba4c4-4d03-48f8-81ba-0ebe9b78d635
-# ╟─a076baa5-6442-4f27-920d-5788b0b23fa6
-# ╟─d1ed848a-6221-4386-8066-83b1b6ede92f
 # ╟─6f07a125-7801-4f53-8372-39a2e34d87be
 # ╟─0b1e0eb1-8188-49b1-ac38-a14b51e2f1b8
 # ╟─58bc4235-e61b-4c9a-8ede-3633e1c2f7a9
@@ -595,3 +654,10 @@ end
 # ╟─6117b062-4bf7-499a-9423-313b680f1177
 # ╠═a787f0dc-aeb0-4959-9f74-be9dc3ade1ad
 # ╟─eda5e7da-e51f-4fc9-800e-cb128e082513
+# ╟─2190d7f4-fd0b-4c8f-ad9c-cb960b158362
+# ╠═303cbee7-ad48-4cf2-9808-77016b0f6833
+# ╟─6cba8ce5-48ef-4fd2-91bb-393f143742e7
+# ╠═2b9387d9-0daf-46b9-95ff-3effb1d544ef
+# ╠═5e01b043-2d34-4231-ae36-fe6ee663c289
+# ╟─a076baa5-6442-4f27-920d-5788b0b23fa6
+# ╟─d1ed848a-6221-4386-8066-83b1b6ede92f
