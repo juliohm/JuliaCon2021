@@ -544,7 +544,7 @@ Suppose we are given an airplane and a helicopter model, and are asked to learn 
 
 $$WCI = (10\sqrt v - v + 10.5) \cdot (33 - T_a)$$
 
-Let's assume that the airplane flies at moderate speeds and that we can interpolate the wind measurements with simple *geostatistical estimation*:
+Let's assume that the airplane flies at moderate speeds and that we can interpolate the measurements of wind velocity with *geostatistical estimation*:
 """
 
 # ╔═╡ 303cbee7-ad48-4cf2-9808-77016b0f6833
@@ -586,10 +586,73 @@ begin
 	
 	# simulate wind velocity on the helicopter
 	ensemble = solve(𝓈, ℊ)
+	
+	# initialize visualization
+	fig = WGL.Figure(resolution = (650, 300))
+	
+	# visualize realizations in the ensemble
+	for i in 1:3
+		viz(fig[1,i], ensemble[i], variable = :v)
+	end
+	
+	# display visualization
+	WGL.current_figure()
 end
 
-# ╔═╡ 5e01b043-2d34-4231-ae36-fe6ee663c289
-viz(ensemble[1], variable = :v)
+# ╔═╡ 6caa0fb1-f028-4dad-9db8-5a528c6d1c62
+md"""
+Let's assume that there exists a reliable physics-based simulation model for the WCI on the airplane:
+"""
+
+# ╔═╡ 32f95691-e48f-4b49-94a5-d576d60e493a
+begin
+	# air temperature in degrees Celsius
+	Tₐ = 22.0
+	
+	# windchill index on airplane
+	WCI = @. (10*√𝒱.v - 𝒱.v + 10.5) * (33 - Tₐ)
+end;
+
+# ╔═╡ 626b66b8-fd3a-45f3-966f-8c9be2bc98c4
+md"""
+Let's try to predict the WCI on the helicopter using the results of the physics-based simulation that are only available for the airplane model:
+"""
+
+# ╔═╡ d6a1ef20-ce99-4732-adc5-8a87613654b1
+let	
+	# regression task v → WCI
+	𝓉 = RegressionTask(:v, :WCI)
+	
+	# learning model
+	𝒽 = @MLJ.load DecisionTreeRegressor pkg=DecisionTree
+	
+	# learning strategy
+	𝓁 = PointwiseLearn(𝒽())
+	
+	# source domain with annotations
+	Ωₛ = georef((v = 𝒱.v, WCI = WCI), ✈)
+	
+	# initialize visualization
+	fig = WGL.Figure(resolution = (650, 300))
+	
+	# solve and visualize prediction on each realization
+	for i in 1:3
+		# target domain
+		Ωₜ = ensemble[i]
+	
+		# learning problem
+		𝓅 = LearningProblem(Ωₛ, Ωₜ, 𝓉)
+	
+		# solve the problem
+		𝒲 = solve(𝓅, 𝓁)
+	
+		# visualize prediction
+		viz(fig[1,i], 𝒲, variable = :WCI)
+	end
+	
+	# display visualization
+	WGL.current_figure()
+end
 
 # ╔═╡ a076baa5-6442-4f27-920d-5788b0b23fa6
 md"""
@@ -658,6 +721,9 @@ html"""
 # ╠═303cbee7-ad48-4cf2-9808-77016b0f6833
 # ╟─6cba8ce5-48ef-4fd2-91bb-393f143742e7
 # ╠═2b9387d9-0daf-46b9-95ff-3effb1d544ef
-# ╠═5e01b043-2d34-4231-ae36-fe6ee663c289
+# ╟─6caa0fb1-f028-4dad-9db8-5a528c6d1c62
+# ╠═32f95691-e48f-4b49-94a5-d576d60e493a
+# ╟─626b66b8-fd3a-45f3-966f-8c9be2bc98c4
+# ╠═d6a1ef20-ce99-4732-adc5-8a87613654b1
 # ╟─a076baa5-6442-4f27-920d-5788b0b23fa6
 # ╟─d1ed848a-6221-4386-8066-83b1b6ede92f
