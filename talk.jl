@@ -75,22 +75,15 @@ md"""
 # Geostatistical Learning
 
 #### Challenges and Opportunities
-
-##### Package:
-"""
-
-# ╔═╡ 432d56b2-bd58-43bd-a9ed-0e8e42e2303b
-html"""
-<img src="https://github.com/JuliaEarth/GeoStats.jl/blob/master/docs/src/assets/logo-text.svg?raw=true" width=350>
 """
 
 # ╔═╡ 79e973b5-2cb2-4c3b-af9d-a44307fdd659
 md"""
 Júlio Hoffimann, Ph.D. ([julio.hoffimann@impa.br](mailto:julio.hoffimann@impa.br))
 
-*Postdoctoral fellow in Industrial Mathematics*
+*Postdoctoral researcher in Industrial Mathematics*
 
-Instituto de Matemática pura e Aplicada
+Instituto de Matemática Pura e Aplicada
 """
 
 # ╔═╡ 1e4e92a3-549b-46ee-905d-3dc4c82b12de
@@ -103,9 +96,22 @@ md"""
 
 ### In this talk...
 
-- *What is **geo**statistical learning? What are the challenges?*
-- *Why the **Julia** programming language? Why not Python or R?*
+- *What is **geo**statistical learning?*
+- *What are the challenges?*
 """
+
+# ╔═╡ fb6f8f9e-9735-4ed9-8f82-7dadadf656c1
+md"""
+##### Package:
+"""
+
+# ╔═╡ 432d56b2-bd58-43bd-a9ed-0e8e42e2303b
+html"""
+<img src="https://github.com/JuliaEarth/GeoStats.jl/blob/master/docs/src/assets/logo-text.svg?raw=true" width=350>
+"""
+
+# ╔═╡ 54717f0d-08e8-4549-9664-85e976736422
+html"<button onclick='present()'>Start presentation</button>"
 
 # ╔═╡ 2ff88b3a-9ed1-4495-93d7-75945b1ca9e7
 md"""
@@ -121,7 +127,9 @@ From Greek *geō-* the term **Geo** means Earth as in **Geo**logy, **Geo**physic
 
 **Geo** can also mean Geospatial as in **Geo**spatial sciences and Computational **Geo**metry.
 
-> [GeoStats.jl](https://github.com/JuliaEarth/GeoStats.jl) is about the second connotation. We refer to **geo**statistics as the branch of statistics developed for **geo**spatial data (functions on **geo**metrical spaces).
+![sphere](https://as2.ftcdn.net/jpg/01/68/75/61/500_F_168756180_YaRuL7bc9DuAEIDBRMSLFOXs7Alxd4G2.jpg)
+
+In this talk we adopt the second connotation and refer to **geo**statistics as the branch of statistics developed for **geo**spatial data.
 """
 
 # ╔═╡ 75797373-7126-4209-883d-41261ba211eb
@@ -137,24 +145,35 @@ The concept of **table** is widespread. We support any table implementing the [T
 
 Given a **domain** (or region) in physical space, we can discretize it into *elements*. We support any domain implementing the [Meshes.jl]() interface, including Cartesian grids, point sets, collections of geometries and general unstructured meshes.
 
-Thanks to [Makie.jl](https://github.com/JuliaPlots/Makie.jl), we can visualize all these domains directly on the GPU:
+Thanks to [Makie.jl](https://github.com/JuliaPlots/Makie.jl), we can visualize all these domains efficiently on the GPU:
 """
 
-# ╔═╡ dc2345d4-b338-4c3c-aaa4-789988832406
+# ╔═╡ 2a196dad-ec23-4942-9e30-3f2876a65f75
 let
-	# discretization of cube region
-	grid = CartesianGrid(10, 10, 10)
+	# load statue of Beethoven
+	👤 = loadply("data/beethoven.ply")
 	
-	# visualize 3D grid on GPU
-	viz(grid, showfacets = true)
+	# visualize domain on GPU
+	viz(👤, showfacets = true)
 end
 
 # ╔═╡ d52c37cb-232a-49d3-a6af-ccad1405ddb8
 md"""
 ## Examples of geospatial data
 
-GeoStats.jl has a very **clean user interface**, including a universal `georef` function to combine various types of tables and geospatial domains. Thanks to **Julia's multiple-dispatch**, we could design very sophiscated functionality without compromising **user experience**.
+We introduce the **`georef`** function to combine tables with domains:
 
+$$\textbf{georef}\text{(table, domain)} \mapsto \text{data}$$
+
+And the functions **`values`** and **`domain`** to recover the table and domain from the data:
+
+$$\begin{align*}\textbf{values}\text{(data)} &\mapsto \text{table}\\ \textbf{domain}\text{(data)} &\mapsto \text{domain}\end{align*}$$
+
+Thanks to **Julia's multiple-dispatch**, we provide a very **clean user interface** for combining various types of tables and domains.
+"""
+
+# ╔═╡ df7dc253-1558-4890-9a7c-1844f342beae
+md"""
 ### 3D grid data
 """
 
@@ -190,26 +209,9 @@ end
 # ╔═╡ ea422ea7-42ef-4245-8767-d6631cca3ed3
 viz(city, variable = :color)
 
-# ╔═╡ 9fdcf73b-3c3d-4f2d-b8bf-d15f1dcf15cd
-md"""
-### 3D mesh data
-"""
-
-# ╔═╡ 4527d107-2849-4b80-9c52-3db6fc888ec2
-begin
-	# load statue of Beethoven
-	👤 = loadply("data/beethoven.ply")
-	
-	# assign log-area of triangles to mesh
-	mesh = georef((area = log.(area.(👤)),), 👤)
-end
-
-# ╔═╡ 9f1128e8-13ae-4334-bb9f-cc718e80d024
-viz(mesh, variable = :area, showfacets = true)
-
 # ╔═╡ 7df28235-efaf-42f9-9943-c7d452dfd347
 md"""
-### 2D geometry set data
+### Map data
 """
 
 # ╔═╡ 330a3630-38fa-4948-9498-c336fb0dc8f5
@@ -218,14 +220,29 @@ BRA = GeoTables.gadm("BRA", children = true)
 
 # ╔═╡ 472ba4c4-4d03-48f8-81ba-0ebe9b78d635
 let
-	# compute attributes per state
-	attr = (letters = length.(BRA.NAME_1),)
+	# compute lenght of state names
+	tab = (len = length.(BRA.NAME_1),)
 	
 	# combine attributes with states
-	🇧🇷 = georef(attr, domain(BRA))
+	🇧🇷 = georef(tab, domain(BRA))
 	
 	# visualize states in different color
-	viz(🇧🇷, variable = :letters, showfacets = true)
+	viz(🇧🇷, variable = :len, showfacets = true)
+end
+
+# ╔═╡ a130112d-0a93-4ec6-b787-6fbc9b669b03
+let
+	# load fox skull model
+	fox = loadply("data/fox.ply")
+	
+	# compute area of elements
+	tab = (area = log.(area.(fox)),)
+	
+	# georeference area values on mesh
+	mesh = georef(tab, fox)
+	
+	# visualize mesh with colors
+	viz(mesh, variable = :area)
 end
 
 # ╔═╡ 6f07a125-7801-4f53-8372-39a2e34d87be
@@ -234,7 +251,7 @@ md"""
 
 ### Classical learning framework
 
-Let's recall the definition of well-posed learning problems:
+Recall the definition of well-posed learning problems:
 
 > **Definition ([Mitchell 1997](http://www.cs.cmu.edu/~tom/mlbook.html)).** A computer program is said to **learn** from experience $\mathcal{E}$ with respect to some class of tasks $\mathcal{T}$ and performance measure $\mathcal{P}$, if its performance at tasks in $\mathcal{T}$, as measured by $\mathcal{P}$, improves with experience $\mathcal{E}$.
 
@@ -244,7 +261,7 @@ $$\hat{f} = \arg\min_{h\in\mathcal{H}} \mathbb{E}_{(\mathbf{x},y) \sim \Pr}\left
 
 where $\mathcal{E}$ is a data set with $n$ samples, $\mathcal{P}$ is the empirical risk and $\mathcal{T}$ is a classical learning task such as regression or classification.
 
-Assumptions which do **not** hold in geospatial applications:
+Popular assumptions which do **not** hold in **geo**spatial applications:
 
 1. training samples are i.i.d.
 2. train and test distributions are equal
@@ -255,7 +272,7 @@ Assumptions which do **not** hold in geospatial applications:
 md"""
 ### Can't hold onto classical assumptions
 
-Suppose we are given a crop classification model:
+Suppose we are given a **classification model for pixels** of an image:
 
 - **features ($$\mathbf{x}$$):** bands of satellite image
 - **target ($$y$$):** crop type (soy, corn, ...)
@@ -333,7 +350,9 @@ LocalResource("assets/cvsetup.png")
 md"""
 #### Result
 
-The model's estimated error is **$(round(ϵ̂cv*100, digits=2))%** misclassification. However, when we deploy the model in the *target domain* $\mathcal{D}_t$ the error is much higher with **$(round(ϵ*100, digits=2))%** of the samples misclassified. The error is **$(round(ϵ / ϵ̂cv, digits=2))** times higher than expected.
+The model's estimated error is **$(round(ϵ̂cv*100, digits=2))%** misclassification. However, when we deploy the model in the *target domain* $\mathcal{D}_t$ the error is much higher with **$(round(ϵ*100, digits=2))%** of the samples misclassified.
+
+The error is **$(round(ϵ / ϵ̂cv, digits=2))** times higher than expected.
 """
 
 # ╔═╡ 56fbe58f-facd-4922-b7cf-8cbadb52be83
@@ -385,14 +404,12 @@ LocalResource("assets/bcv-lbo.png")
 
 # ╔═╡ bf339a05-c886-4d28-9db8-ed03a0d6dce6
 md"""
-**GeoStats.jl** provides extremely efficient parallel implementations for all these methods. We were able to exploit multiple threads and other concepts from high-performance computing that are readily available in the language.
-
-Thanks to **Julia's expressive power**, we can create advanced pipelines with just a few lines of code:
+We provide efficient **parallel implementations** for all these methods:
 """
 
 # ╔═╡ 51c1ab1b-1984-4198-9ccd-a3e3810cbbc6
 let
-	# learning task: satellite bands → crop type
+	# learning task: bands → crop type
 	𝓉 = ClassificationTask((:band1, :band2, :band3, :band4), :crop)
 	
 	# learning problem: train in Ωₛ and predict in Ωₜ
@@ -435,9 +452,11 @@ MLJ.models() |> DataFrame
 md"""
 ### A new learning framework (Hoffimann et al. 2021)
 
-More generally, we propose a new framework to advance the research:
+The previous example illustrates the value of statistical learning methodologies that are specific to geospatial data. We propose a new learning framework to advance this research:
 
 >**Definition (GL).** Given a source geospatial domain $\mathcal{D}_s$ and a source learning task $\mathcal{T}_s$, a target geospatial domain $\mathcal{D}_t$ and a target learning task $\mathcal{T}_t$, **Geostatistical Learning** consists of learning $\mathcal{T}_t$ over $\mathcal{D}_t$ using the knowledge acquired while learning $\mathcal{T}_s$ over $\mathcal{D}_s$, assuming that the data in $\mathcal{D}_s$ and $\mathcal{D}_t$ are a single realization of the involved geospatial processes.
+
+For more details: [Hoffimann et al. 2021. Geostatistical Learning: Challenges and Opportunities](https://arxiv.org/abs/2102.08791).
 """
 
 # ╔═╡ 689a31fa-a7ff-42c3-abdb-4cce2365abd4
@@ -449,9 +468,7 @@ html"""
 
 # ╔═╡ 063407c4-4119-44e3-8f1c-9dc9c5aba5b1
 md"""
-Geostatistical Learning (or GL for short) is a **necessary change of perspective** in order to evolve existing statistical methodologies into new methodologies that are useful for geospatial data.
-
-To clarify this statement, we share real-world examples in the next section that would be too difficult to express and solve with the classical framework.
+Let's see examples that would be too difficult to express and/or solve within the classical framework.
 """
 
 # ╔═╡ 15c012fc-30d1-419b-a644-b2246d392c61
@@ -530,15 +547,16 @@ let
 	fig
 end
 
+# ╔═╡ 9ccd7061-ebac-4a2f-bca3-3e54e4566bfe
+md"""
+Geostatistical methods exploit **topological relations** (e.g. neighborhoods) to constrain the learning process and produce more sensible results in geospatial applications.
+
+Thanks to **Julia's high-performance**, our implementations scale.
+"""
+
 # ╔═╡ 2190d7f4-fd0b-4c8f-ad9c-cb960b158362
 md"""
 #### Learning on meshes
-
-Geostatistical methods exploit **topological relations** (e.g. neighborhoods) on meshes to constrain the learning process and produce more sensible results with real-world geospatial data.
-
-GeoStats.jl enables **very advanced learning pipelines** on general unstructured meshes. Thanks to **Julia's high-performance**, our implementations scale.
-
-##### Example
 
 Suppose we are given an airplane and a helicopter model, and are asked to learn the distribution of [wind-chill index](https://en.wikipedia.org/wiki/Wind_chill#Original_model) (WCI) on the surface of these models given measurements of wind velocity $v$ at specific points (e.g. pitot tubes) and a reference air temperature $T_a$:
 
@@ -562,10 +580,10 @@ begin
 	𝓀 = Kriging(:v => (variogram=GaussianVariogram(range=300.0),))
 	
 	# interpolate wind velocity on the airplane
-	𝒱 = solve(ℯ, 𝓀)
+	airplane = solve(ℯ, 𝓀)
 	
 	# visualize interpolation
-	viz(𝒱, variable = :v)
+	viz(airplane, variable = :v)
 end
 
 # ╔═╡ 6cba8ce5-48ef-4fd2-91bb-393f143742e7
@@ -609,13 +627,19 @@ begin
 	# air temperature in degrees Celsius
 	Tₐ = 22.0
 	
-	# windchill index on airplane
-	WCI = @. (10*√𝒱.v - 𝒱.v + 10.5) * (33 - Tₐ)
+	# wind velocity on airplane
+	v  = airplane.v
+	
+	# some expensive physics-based simulation
+	WCI = @. (10*√v - v + 10.5) * (33 - Tₐ)
+	
+	# georeference results of simulation
+	ℳₛ = georef((v = v, WCI = WCI), ✈)
 end;
 
 # ╔═╡ 626b66b8-fd3a-45f3-966f-8c9be2bc98c4
 md"""
-Let's try to predict the WCI on the helicopter using the results of the physics-based simulation that are only available for the airplane model:
+Let's try to predict the WCI on the helicopter using the results of the physics-based simulation that are only available for the airplane:
 """
 
 # ╔═╡ d6a1ef20-ce99-4732-adc5-8a87613654b1
@@ -629,25 +653,22 @@ let
 	# learning strategy
 	𝓁 = PointwiseLearn(𝒽())
 	
-	# source domain with annotations
-	Ωₛ = georef((v = 𝒱.v, WCI = WCI), ✈)
-	
 	# initialize visualization
 	fig = WGL.Figure(resolution = (650, 300))
 	
 	# solve and visualize prediction on each realization
 	for i in 1:3
 		# target domain
-		Ωₜ = ensemble[i]
+		ℳₜ = ensemble[i]
 	
 		# learning problem
-		𝓅 = LearningProblem(Ωₛ, Ωₜ, 𝓉)
+		𝓅 = LearningProblem(ℳₛ, ℳₜ, 𝓉)
 	
 		# solve the problem
-		𝒲 = solve(𝓅, 𝓁)
+		ℳ̂ₜ = solve(𝓅, 𝓁)
 	
 		# visualize prediction
-		viz(fig[1,i], 𝒲, variable = :WCI)
+		viz(fig[1,i], ℳ̂ₜ, variable = :WCI)
 	end
 	
 	# display visualization
@@ -656,14 +677,33 @@ end
 
 # ╔═╡ a076baa5-6442-4f27-920d-5788b0b23fa6
 md"""
-#### More examples
+## Challenges and Opportunities
 
-Please check the [GeoStatsTutorials](https://github.com/JuliaEarth/GeoStatsTutorials) for more examples and features:
+We have many challenges to address:
+
+- Efficient geostatistical modeling with **geodesics**
+- Adequate correlation structures on **manifolds**
+- Models developed specifically for the **sphere**
+- Many more challenges...
 """
 
-# ╔═╡ d1ed848a-6221-4386-8066-83b1b6ede92f
+# ╔═╡ fad8f51c-8dcf-48b1-b7ed-8cb3b45da7ad
 html"""
-<iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=PLsH4hc788Z1f1e61DN3EV9AhDlpbhhanw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<img src="https://upload.wikimedia.org/wikipedia/commons/a/a4/Geodesic_lines_in_a_sphere_%28closed_curved_space%29.png" width=300>
+"""
+
+# ╔═╡ c69da448-f49d-4448-844e-82f612f437e3
+md"""
+and research opportunities in computational **geo**metry and **geo**statistics.
+"""
+
+# ╔═╡ 6340be6f-a2ee-4aa8-9b42-338b52be9a22
+md"""
+### Call for contributors
+
+If you share the feeling that **geo**spatial technologies could be more **user-friendly** and still be **fast**, come join us. There is a **lot of work to do**, and your help will make a difference:
+
+**E-mail:** [julio.hoffimann@impa.br](mailto:julio.hoffimann@impa.br)
 """
 
 # ╔═╡ Cell order:
@@ -671,25 +711,26 @@ html"""
 # ╟─995980f5-aa29-46a1-834e-9458c71f8914
 # ╟─e02bb839-dbe3-4e05-ad48-e39020d605d1
 # ╟─b85daaf1-d07b-44d0-9cef-cc19087d792d
-# ╟─432d56b2-bd58-43bd-a9ed-0e8e42e2303b
 # ╟─79e973b5-2cb2-4c3b-af9d-a44307fdd659
 # ╟─1e4e92a3-549b-46ee-905d-3dc4c82b12de
 # ╟─5bd7385d-afa7-49ae-83a7-6879c48c770e
+# ╟─fb6f8f9e-9735-4ed9-8f82-7dadadf656c1
+# ╟─432d56b2-bd58-43bd-a9ed-0e8e42e2303b
+# ╟─54717f0d-08e8-4549-9664-85e976736422
 # ╟─2ff88b3a-9ed1-4495-93d7-75945b1ca9e7
 # ╟─75797373-7126-4209-883d-41261ba211eb
-# ╠═dc2345d4-b338-4c3c-aaa4-789988832406
+# ╠═2a196dad-ec23-4942-9e30-3f2876a65f75
 # ╟─d52c37cb-232a-49d3-a6af-ccad1405ddb8
+# ╟─df7dc253-1558-4890-9a7c-1844f342beae
 # ╠═89bb5a1c-d905-4b3b-81ff-343dbf14d306
 # ╠═fa553a82-6f35-4d6e-845c-a97cd54be7f6
 # ╟─706e294d-ce1b-4be1-b1cf-00a27bc3ede3
 # ╠═916d8af0-4065-4e6f-bf99-4d473523eba8
 # ╠═ea422ea7-42ef-4245-8767-d6631cca3ed3
-# ╟─9fdcf73b-3c3d-4f2d-b8bf-d15f1dcf15cd
-# ╠═4527d107-2849-4b80-9c52-3db6fc888ec2
-# ╠═9f1128e8-13ae-4334-bb9f-cc718e80d024
 # ╟─7df28235-efaf-42f9-9943-c7d452dfd347
 # ╠═330a3630-38fa-4948-9498-c336fb0dc8f5
 # ╠═472ba4c4-4d03-48f8-81ba-0ebe9b78d635
+# ╠═a130112d-0a93-4ec6-b787-6fbc9b669b03
 # ╟─6f07a125-7801-4f53-8372-39a2e34d87be
 # ╟─0b1e0eb1-8188-49b1-ac38-a14b51e2f1b8
 # ╟─58bc4235-e61b-4c9a-8ede-3633e1c2f7a9
@@ -717,6 +758,7 @@ html"""
 # ╟─6117b062-4bf7-499a-9423-313b680f1177
 # ╠═a787f0dc-aeb0-4959-9f74-be9dc3ade1ad
 # ╟─eda5e7da-e51f-4fc9-800e-cb128e082513
+# ╟─9ccd7061-ebac-4a2f-bca3-3e54e4566bfe
 # ╟─2190d7f4-fd0b-4c8f-ad9c-cb960b158362
 # ╠═303cbee7-ad48-4cf2-9808-77016b0f6833
 # ╟─6cba8ce5-48ef-4fd2-91bb-393f143742e7
@@ -726,4 +768,6 @@ html"""
 # ╟─626b66b8-fd3a-45f3-966f-8c9be2bc98c4
 # ╠═d6a1ef20-ce99-4732-adc5-8a87613654b1
 # ╟─a076baa5-6442-4f27-920d-5788b0b23fa6
-# ╟─d1ed848a-6221-4386-8066-83b1b6ede92f
+# ╟─fad8f51c-8dcf-48b1-b7ed-8cb3b45da7ad
+# ╟─c69da448-f49d-4448-844e-82f612f437e3
+# ╟─6340be6f-a2ee-4aa8-9b42-338b52be9a22
