@@ -562,7 +562,7 @@ html"""
 
 # ╔═╡ 063407c4-4119-44e3-8f1c-9dc9c5aba5b1
 md"""
-We argue that **geostatistical learning** is a **necessary change of perspective** to advance the field. Examples like the following example with non-trivial geospatial domains are too difficult to express and/or solve properly within the classical framework.
+We argue that **geostatistical learning** is a **necessary change of perspective** to advance the field. Examples like the following example with non-trivial geospatial domains are too difficult to express and/or solve properly within the classical learning framework.
 """
 
 # ╔═╡ 2190d7f4-fd0b-4c8f-ad9c-cb960b158362
@@ -578,7 +578,8 @@ Let's assume that the airplane flies at moderate speeds and that we can interpol
 
 # ╔═╡ 303cbee7-ad48-4cf2-9808-77016b0f6833
 begin
-	# load airplane model
+	# airplane model by John Burkardt
+	# https://people.sc.fsu.edu/~jburkardt/data/ply/ply.html
 	✈ = loadply("data/airplane.ply")
 	
 	# wind velocity on two sensors on the wings
@@ -604,7 +605,8 @@ Let's assume that we are more uncertain about the wind velocity on the helicopte
 
 # ╔═╡ 2b9387d9-0daf-46b9-95ff-3effb1d544ef
 begin
-	# load helicopter model
+	# helicopter model by John Burkardt
+	# https://people.sc.fsu.edu/~jburkardt/data/ply/ply.html
 	🚁 = loadply("data/helicopter.ply")
 	
 	# geostatistical simulation problem
@@ -650,7 +652,7 @@ end;
 
 # ╔═╡ 626b66b8-fd3a-45f3-966f-8c9be2bc98c4
 md"""
-Let's try to predict the WCI on the helicopter using the results of the physics-based simulation that are only available for the airplane:
+Finally, let's try to predict the WCI on the helicopter using the results of the physics-based simulation that are only available for the airplane:
 """
 
 # ╔═╡ d6a1ef20-ce99-4732-adc5-8a87613654b1
@@ -669,7 +671,7 @@ let
 	
 	# solve and visualize prediction on each realization
 	for i in 1:3
-		# target domain
+		# target realization
 		ℳₜ = ensemble[i]
 	
 		# learning problem
@@ -712,16 +714,24 @@ and research opportunities in computational **geo**metry and **geo**statistics.
 md"""
 ### Call for contributors
 
-If you share the feeling that **geo**statistical technologies could be more widely used, come join us. There is a **lot of work to do**, and your help will make a difference.
+If you share the feeling that these **geo**statistical technologies could be more widely used, come join us. There is a **lot of work to do**, and your help will make a difference.
 
-**E-mail:** [julio.hoffimann@impa.br](mailto:julio.hoffimann@impa.br)
+#### Getting started
 
-**YouTube:**
+Subscribe to our [GeoStats.jl](https://github.com/JuliaEarth/GeoStats.jl) tutorials on YouTube:
 """
 
 # ╔═╡ db6b5401-629d-4ebc-8736-3fdf1ec07363
 html"""
 <iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=PLsH4hc788Z1f1e61DN3EV9AhDlpbhhanw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+"""
+
+# ╔═╡ d3ee2dde-e678-435d-99bf-99852d4f88e6
+md"""
+and join our community channels:
+
+[![Gitter](https://img.shields.io/badge/chat-on%20gitter-bc0067?style=flat-square)](https://gitter.im/JuliaEarth/GeoStats.jl)
+[![Zulip](https://img.shields.io/badge/chat-on%20zulip-9cf?style=flat-square)](https://julialang.zulipchat.com/#narrow/stream/276201-geostats.2Ejl)
 """
 
 # ╔═╡ Cell order:
@@ -792,3 +802,4 @@ html"""
 # ╟─c69da448-f49d-4448-844e-82f612f437e3
 # ╟─6340be6f-a2ee-4aa8-9b42-338b52be9a22
 # ╟─db6b5401-629d-4ebc-8736-3fdf1ec07363
+# ╟─d3ee2dde-e678-435d-99bf-99852d4f88e6
