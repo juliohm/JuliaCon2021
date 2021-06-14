@@ -134,7 +134,7 @@ In this talk we adopt the second connotation and refer to **geo**statistics as t
 
 # ╔═╡ 75797373-7126-4209-883d-41261ba211eb
 md"""
-## But what is geospatial data?
+## What is geospatial data?
 
 Very generally, (discrete) **geo**spatial data is the combination of:
 
@@ -150,10 +150,11 @@ Thanks to [Makie.jl](https://github.com/JuliaPlots/Makie.jl), we can visualize a
 
 # ╔═╡ 2a196dad-ec23-4942-9e30-3f2876a65f75
 let
-	# load statue of Beethoven
+	# Beethoven model by John Burkardt
+	# https://people.sc.fsu.edu/~jburkardt/data/ply/ply.html
 	👤 = loadply("data/beethoven.ply")
 	
-	# visualize domain on GPU
+	# visualize geospatial domain
 	viz(👤, showfacets = true)
 end
 
@@ -168,8 +169,6 @@ $$\textbf{georef}\text{(table, domain)} \mapsto \text{data}$$
 And the functions **`values`** and **`domain`** to recover the table and domain from the data:
 
 $$\begin{align*}\textbf{values}\text{(data)} &\mapsto \text{table}\\ \textbf{domain}\text{(data)} &\mapsto \text{domain}\end{align*}$$
-
-Thanks to **Julia's multiple-dispatch**, we provide a very **clean user interface** for combining various types of tables and domains.
 """
 
 # ╔═╡ df7dc253-1558-4890-9a7c-1844f342beae
@@ -179,10 +178,10 @@ md"""
 
 # ╔═╡ 89bb5a1c-d905-4b3b-81ff-343dbf14d306
 begin
-	# table with 1000 measurements of φ and κ and Sₒ
+	# table with 1000 values of φ and κ and Sₒ
 	tab = (φ = rand(1000), κ = rand(1000), Sₒ = rand(1000))
 	
-	# domain with 1000 finite elements
+	# domain with 1000 hexahedron elements
 	dom = CartesianGrid(10, 10, 10)
 	
 	# combine table with domain
@@ -202,7 +201,7 @@ begin
 	# download image from Google Earth
 	img = load(download("http://www.gstatic.com/prettyearth/assets/full/1408.jpg"))
 	
-	# georeference color attribute on 2D grid
+	# georeference 2D array on Cartesian grid
 	city = georef((color = img,))
 end
 
@@ -215,41 +214,51 @@ md"""
 """
 
 # ╔═╡ 330a3630-38fa-4948-9498-c336fb0dc8f5
-# download Brazil geographic data
-BRA = GeoTables.gadm("BRA", children = true)
+begin
+	# download Brazil map data
+	BRA = GeoTables.gadm("BRA", children = true)
 
-# ╔═╡ 472ba4c4-4d03-48f8-81ba-0ebe9b78d635
-let
-	# compute lenght of state names
-	tab = (len = length.(BRA.NAME_1),)
+	# table with state names and their lengths
+	attributes = (state = BRA.NAME_1, strlen = length.(BRA.NAME_1))
 	
 	# combine attributes with states
-	🇧🇷 = georef(tab, domain(BRA))
-	
-	# visualize states in different color
-	viz(🇧🇷, variable = :len, showfacets = true)
+	🇧🇷 = georef(attributes, domain(BRA))
 end
+
+# ╔═╡ 472ba4c4-4d03-48f8-81ba-0ebe9b78d635
+viz(🇧🇷, variable = :strlen, showfacets = true)
+
+# ╔═╡ dbb62666-ea4b-4715-bb09-a9fa30326e85
+md"""
+### Mesh data
+"""
 
 # ╔═╡ a130112d-0a93-4ec6-b787-6fbc9b669b03
 let
-	# load fox skull model
+	# fox skull model by Artec Group Inc.
+	# https://www.artec3d.com/3d-models/fox-skull
 	fox = loadply("data/fox.ply")
 	
 	# compute area of elements
 	tab = (area = log.(area.(fox)),)
 	
-	# georeference area values on mesh
-	mesh = georef(tab, fox)
+	# georeference areas on mesh
+	ℳ = georef(tab, fox)
 	
 	# visualize mesh with colors
-	viz(mesh, variable = :area)
+	viz(ℳ, variable = :area)
 end
+
+# ╔═╡ 9c631159-fc8a-4b31-b564-85de6bdd9f2c
+md"""
+Thanks to **Julia's multiple-dispatch**, we provide a **clean user interface** that can combine very diverse types of tables and geospatial domains.
+"""
 
 # ╔═╡ 6f07a125-7801-4f53-8372-39a2e34d87be
 md"""
 ## Learning from geospatial data
 
-### Classical learning framework
+### The classical learning framework
 
 Recall the definition of well-posed learning problems:
 
@@ -261,16 +270,18 @@ $$\hat{f} = \arg\min_{h\in\mathcal{H}} \mathbb{E}_{(\mathbf{x},y) \sim \Pr}\left
 
 where $\mathcal{E}$ is a data set with $n$ samples, $\mathcal{P}$ is the empirical risk and $\mathcal{T}$ is a classical learning task such as regression or classification.
 
-Popular assumptions which do **not** hold in **geo**spatial applications:
+#### Classical assumptions
 
 1. training samples are i.i.d.
 2. train and test distributions are equal
 3. samples share a common support (i.e. volume)
+
+Assumptions which do **not** hold in **geo**spatial applications.
 """
 
 # ╔═╡ 0b1e0eb1-8188-49b1-ac38-a14b51e2f1b8
 md"""
-### Can't hold onto classical assumptions
+## Example I - Why the error is so high?
 
 Suppose we are given a **classification model for pixels** of an image:
 
@@ -348,7 +359,7 @@ LocalResource("assets/cvsetup.png")
 
 # ╔═╡ 8b05bd01-1ba7-4f8a-80cc-bdc5a69024f9
 md"""
-#### Result
+### Result
 
 The model's estimated error is **$(round(ϵ̂cv*100, digits=2))%** misclassification. However, when we deploy the model in the *target domain* $\mathcal{D}_t$ the error is much higher with **$(round(ϵ*100, digits=2))%** of the samples misclassified.
 
@@ -376,9 +387,9 @@ end
 
 # ╔═╡ 77c82d92-3331-4217-b8de-153ea94bfbc8
 md"""
-#### What happened?
+## What happened?
 
-Classical cross-validation (CV) relies heavily on the previously stated assumptions in order to:
+Cross-validation (CV) relies heavily on the classical assumptions in order to:
 
 1. hold-out points at **random** (red points)
 2. learn model with remaining points (other colors)
@@ -392,9 +403,9 @@ LocalResource("assets/cv.png")
 
 # ╔═╡ 952dce52-9950-4b66-9348-f804b2887fdf
 md"""
-#### Geostatistical validation
+### Geostatistical validation
 
-In order to avoid the super optimism of CV, the spatial statistics community proposed various alternative methods such as block cross-validation (BCV) and leave-ball-out (LBO).
+In order to avoid the super optimism of CV, the geostatistics community proposed various alternative methods such as block cross-validation (BCV) and leave-ball-out (LBO).
 
 These methods rely on **systematic partitions** of the source domain, which are often parameterized with a spatial correlation length $r > 0$.
 """
@@ -442,38 +453,15 @@ end
 
 # ╔═╡ 1e8f1812-b7ad-42a8-b9f0-5616fae25f39
 md"""
-We support any learning model implementing the [MLJ.jl](https://github.com/alan-turing-institute/MLJ.jl) interface, which means all learning models from [scikit-learn](https://scikit-learn.org) and more:
+and support any learning model implementing the [MLJ.jl](https://github.com/alan-turing-institute/MLJ.jl) interface, which means all learning models from [scikit-learn](https://scikit-learn.org) and more:
 """
 
 # ╔═╡ b54eb16c-aa1d-448e-823a-2a9ebe645205
 MLJ.models() |> DataFrame
 
-# ╔═╡ e1334779-0753-4fe1-90dd-25b638c832b2
-md"""
-### A new learning framework (Hoffimann et al. 2021)
-
-The previous example illustrates the value of statistical learning methodologies that are specific to geospatial data. We propose a new learning framework to advance this research:
-
->**Definition (GL).** Given a source geospatial domain $\mathcal{D}_s$ and a source learning task $\mathcal{T}_s$, a target geospatial domain $\mathcal{D}_t$ and a target learning task $\mathcal{T}_t$, **Geostatistical Learning** consists of learning $\mathcal{T}_t$ over $\mathcal{D}_t$ using the knowledge acquired while learning $\mathcal{T}_s$ over $\mathcal{D}_s$, assuming that the data in $\mathcal{D}_s$ and $\mathcal{D}_t$ are a single realization of the involved geospatial processes.
-
-For more details: [Hoffimann et al. 2021. Geostatistical Learning: Challenges and Opportunities](https://arxiv.org/abs/2102.08791).
-"""
-
-# ╔═╡ 689a31fa-a7ff-42c3-abdb-4cce2365abd4
-html"""
-<p align="center">
-    <img src="https://i.postimg.cc/d3BpsStQ/domains.png">
-</p>
-"""
-
-# ╔═╡ 063407c4-4119-44e3-8f1c-9dc9c5aba5b1
-md"""
-Let's see examples that would be too difficult to express and/or solve within the classical framework.
-"""
-
 # ╔═╡ 15c012fc-30d1-419b-a644-b2246d392c61
 md"""
-#### Geostatistical clustering
+## Example II - Why the clusters are everywhere?
 
 Suppose we are given a micro-CT image such as the image by [Niu et al. 2020.](http://www.digitalrocksportal.org/projects/324), and are asked to segment it into homogeneous geobodies before proceeding with additional statistical analysis:
 """
@@ -526,7 +514,9 @@ end
 
 # ╔═╡ 6117b062-4bf7-499a-9423-313b680f1177
 md"""
-We provide *geostatistical clustering* alternatives to address this issue. For example, we provide a generalization of Simple Linear Iterative Clustering (SLIC) that works with any geospatial data:
+### Geostatistical clustering
+
+We provide *geostatistical clustering* methods to address this issue such as a generalization of Simple Linear Iterative Clustering (SLIC) that works with any geospatial data, not just images:
 """
 
 # ╔═╡ a787f0dc-aeb0-4959-9f74-be9dc3ade1ad
@@ -536,7 +526,7 @@ begin
 	
 	# request k = 45 contiguous clusters
 	𝒞 = cluster(ℐ, SLIC(45, 0.07))
-end;
+end
 
 # ╔═╡ eda5e7da-e51f-4fc9-800e-cb128e082513
 let
@@ -549,14 +539,35 @@ end
 
 # ╔═╡ 9ccd7061-ebac-4a2f-bca3-3e54e4566bfe
 md"""
-Geostatistical methods exploit **topological relations** (e.g. neighborhoods) to constrain the learning process and produce more sensible results in geospatial applications.
-
 Thanks to **Julia's high-performance**, our implementations scale.
+"""
+
+# ╔═╡ e1334779-0753-4fe1-90dd-25b638c832b2
+md"""
+## Geostatistical learning (Hoffimann et al 2021)
+
+The previous examples illustrate the value of statistical learning methodologies developed specifically for geospatial data. We propose a new learning framework to advance this research:
+
+[Hoffimann et al. 2021. Geostatistical Learning: Challenges and Opportunities](https://arxiv.org/abs/2102.08791)
+
+>**Definition (GL).** Given a source geospatial domain $\mathcal{D}_s$ and a source learning task $\mathcal{T}_s$, a target geospatial domain $\mathcal{D}_t$ and a target learning task $\mathcal{T}_t$, **Geostatistical Learning** consists of learning $\mathcal{T}_t$ over $\mathcal{D}_t$ using the knowledge acquired while learning $\mathcal{T}_s$ over $\mathcal{D}_s$, assuming that the data in $\mathcal{D}_s$ and $\mathcal{D}_t$ are a single realization of the involved geospatial processes.
+"""
+
+# ╔═╡ 689a31fa-a7ff-42c3-abdb-4cce2365abd4
+html"""
+<p align="center">
+    <img src="https://i.postimg.cc/d3BpsStQ/domains.png">
+</p>
+"""
+
+# ╔═╡ 063407c4-4119-44e3-8f1c-9dc9c5aba5b1
+md"""
+We argue that **geostatistical learning** is a **necessary change of perspective** to advance the field. Examples like the following example with non-trivial geospatial domains are too difficult to express and/or solve properly within the classical framework.
 """
 
 # ╔═╡ 2190d7f4-fd0b-4c8f-ad9c-cb960b158362
 md"""
-#### Learning on meshes
+## More advanced example
 
 Suppose we are given an airplane and a helicopter model, and are asked to learn the distribution of [wind-chill index](https://en.wikipedia.org/wiki/Wind_chill#Original_model) (WCI) on the surface of these models given measurements of wind velocity $v$ at specific points (e.g. pitot tubes) and a reference air temperature $T_a$:
 
@@ -701,9 +712,16 @@ and research opportunities in computational **geo**metry and **geo**statistics.
 md"""
 ### Call for contributors
 
-If you share the feeling that **geo**spatial technologies could be more **user-friendly** and still be **fast**, come join us. There is a **lot of work to do**, and your help will make a difference:
+If you share the feeling that **geo**statistical technologies could be more widely used, come join us. There is a **lot of work to do**, and your help will make a difference.
 
 **E-mail:** [julio.hoffimann@impa.br](mailto:julio.hoffimann@impa.br)
+
+**YouTube:**
+"""
+
+# ╔═╡ db6b5401-629d-4ebc-8736-3fdf1ec07363
+html"""
+<iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=PLsH4hc788Z1f1e61DN3EV9AhDlpbhhanw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 """
 
 # ╔═╡ Cell order:
@@ -730,7 +748,9 @@ If you share the feeling that **geo**spatial technologies could be more **user-f
 # ╟─7df28235-efaf-42f9-9943-c7d452dfd347
 # ╠═330a3630-38fa-4948-9498-c336fb0dc8f5
 # ╠═472ba4c4-4d03-48f8-81ba-0ebe9b78d635
+# ╟─dbb62666-ea4b-4715-bb09-a9fa30326e85
 # ╠═a130112d-0a93-4ec6-b787-6fbc9b669b03
+# ╟─9c631159-fc8a-4b31-b564-85de6bdd9f2c
 # ╟─6f07a125-7801-4f53-8372-39a2e34d87be
 # ╟─0b1e0eb1-8188-49b1-ac38-a14b51e2f1b8
 # ╟─58bc4235-e61b-4c9a-8ede-3633e1c2f7a9
@@ -747,9 +767,6 @@ If you share the feeling that **geo**spatial technologies could be more **user-f
 # ╠═51c1ab1b-1984-4198-9ccd-a3e3810cbbc6
 # ╟─1e8f1812-b7ad-42a8-b9f0-5616fae25f39
 # ╟─b54eb16c-aa1d-448e-823a-2a9ebe645205
-# ╟─e1334779-0753-4fe1-90dd-25b638c832b2
-# ╟─689a31fa-a7ff-42c3-abdb-4cce2365abd4
-# ╟─063407c4-4119-44e3-8f1c-9dc9c5aba5b1
 # ╟─15c012fc-30d1-419b-a644-b2246d392c61
 # ╟─2fd86dfd-382a-4da3-b628-774e0f47f68e
 # ╟─90ef4204-7646-4b49-9fa0-f2be2edf10ad
@@ -759,6 +776,9 @@ If you share the feeling that **geo**spatial technologies could be more **user-f
 # ╠═a787f0dc-aeb0-4959-9f74-be9dc3ade1ad
 # ╟─eda5e7da-e51f-4fc9-800e-cb128e082513
 # ╟─9ccd7061-ebac-4a2f-bca3-3e54e4566bfe
+# ╟─e1334779-0753-4fe1-90dd-25b638c832b2
+# ╟─689a31fa-a7ff-42c3-abdb-4cce2365abd4
+# ╟─063407c4-4119-44e3-8f1c-9dc9c5aba5b1
 # ╟─2190d7f4-fd0b-4c8f-ad9c-cb960b158362
 # ╠═303cbee7-ad48-4cf2-9808-77016b0f6833
 # ╟─6cba8ce5-48ef-4fd2-91bb-393f143742e7
@@ -771,3 +791,4 @@ If you share the feeling that **geo**spatial technologies could be more **user-f
 # ╟─fad8f51c-8dcf-48b1-b7ed-8cb3b45da7ad
 # ╟─c69da448-f49d-4448-844e-82f612f437e3
 # ╟─6340be6f-a2ee-4aa8-9b42-338b52be9a22
+# ╟─db6b5401-629d-4ebc-8736-3fdf1ec07363
