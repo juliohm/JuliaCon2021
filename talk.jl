@@ -226,7 +226,7 @@ begin
 end
 
 # ╔═╡ 472ba4c4-4d03-48f8-81ba-0ebe9b78d635
-viz(🇧🇷, variable = :strlen, showfacets = true)
+viz(🇧🇷, variable = :strlen)
 
 # ╔═╡ dbb62666-ea4b-4715-bb09-a9fa30326e85
 md"""
@@ -468,10 +468,13 @@ Suppose we are given a micro-CT image such as the image by [Niu et al. 2020.](ht
 
 # ╔═╡ 2fd86dfd-382a-4da3-b628-774e0f47f68e
 begin
+	# load micro-CT image
 	μCT = load("data/muCT.tif")
 	
+	# georeference image
 	ℛ = georef((μCT = μCT,))
 	
+	# visualize image
 	viz(ℛ, variable = :μCT)
 end
 
@@ -718,7 +721,7 @@ If you share the feeling that these **geo**statistical technologies could be mor
 
 #### Getting started
 
-Subscribe to our [GeoStats.jl](https://github.com/JuliaEarth/GeoStats.jl) tutorials on YouTube:
+Subscribe to the [GeoStats.jl](https://github.com/JuliaEarth/GeoStats.jl) tutorials on YouTube:
 """
 
 # ╔═╡ db6b5401-629d-4ebc-8736-3fdf1ec07363
@@ -732,6 +735,13 @@ and join our community channels:
 
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-bc0067?style=flat-square)](https://gitter.im/JuliaEarth/GeoStats.jl)
 [![Zulip](https://img.shields.io/badge/chat-on%20zulip-9cf?style=flat-square)](https://julialang.zulipchat.com/#narrow/stream/276201-geostats.2Ejl)
+"""
+
+# ╔═╡ efe21def-6feb-4bd5-8bdb-e74fadf1c919
+md"""
+This notebook is available online:
+
+- [https://github.com/juliohm/juliacon2021](https://github.com/juliohm/juliacon2021)
 """
 
 # ╔═╡ Cell order:
@@ -803,3 +813,4 @@ and join our community channels:
 # ╟─6340be6f-a2ee-4aa8-9b42-338b52be9a22
 # ╟─db6b5401-629d-4ebc-8736-3fdf1ec07363
 # ╟─d3ee2dde-e678-435d-99bf-99852d4f88e6
+# ╟─efe21def-6feb-4bd5-8bdb-e74fadf1c919
