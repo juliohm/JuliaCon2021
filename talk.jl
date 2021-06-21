@@ -226,7 +226,7 @@ begin
 end
 
 # ╔═╡ 472ba4c4-4d03-48f8-81ba-0ebe9b78d635
-viz(🇧🇷, variable = :strlen)
+viz(🇧🇷, variable = :strlen, showfacets = true, decimation = 0.02)
 
 # ╔═╡ dbb62666-ea4b-4715-bb09-a9fa30326e85
 md"""
@@ -715,9 +715,9 @@ and research opportunities in computational **geo**metry and **geo**statistics.
 
 # ╔═╡ 6340be6f-a2ee-4aa8-9b42-338b52be9a22
 md"""
-### Call for contributors
+### Join our community
 
-If you share the feeling that these **geo**statistical technologies could be more widely used, come join us. There is a **lot of work to do**, and your help will make a difference.
+If you share the feeling that **geo**statistics could be more widely used in the industry, come join us. Your help will make a difference.
 
 #### Getting started
 
@@ -731,7 +731,7 @@ html"""
 
 # ╔═╡ d3ee2dde-e678-435d-99bf-99852d4f88e6
 md"""
-and join our community channels:
+and join the community channels:
 
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-bc0067?style=flat-square)](https://gitter.im/JuliaEarth/GeoStats.jl)
 [![Zulip](https://img.shields.io/badge/chat-on%20zulip-9cf?style=flat-square)](https://julialang.zulipchat.com/#narrow/stream/276201-geostats.2Ejl)
@@ -739,9 +739,11 @@ and join our community channels:
 
 # ╔═╡ efe21def-6feb-4bd5-8bdb-e74fadf1c919
 md"""
-This notebook is available online:
+##### LINKS
 
-- [https://github.com/juliohm/juliacon2021](https://github.com/juliohm/juliacon2021)
+This notebook is available online: [https://github.com/juliohm/juliacon2021](https://github.com/juliohm/juliacon2021)
+
+I am happy to connect: [julio.hoffimann@impa.br](mailto:julio.hoffimann@impa.br)
 """
 
 # ╔═╡ Cell order:
