@@ -664,7 +664,7 @@ let
 	𝓉 = RegressionTask(:v, :WCI)
 	
 	# learning model
-	𝒽 = @MLJ.load DecisionTreeRegressor pkg=DecisionTree
+	𝒽 = MLJ.@load DecisionTreeRegressor pkg=DecisionTree
 	
 	# learning strategy
 	𝓁 = PointwiseLearn(𝒽())
