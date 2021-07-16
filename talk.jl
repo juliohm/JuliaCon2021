@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.7
+# v0.15.1
 
 using Markdown
 using InteractiveUtils
@@ -551,7 +551,7 @@ md"""
 
 The previous examples illustrate the value of statistical learning methodologies developed specifically for geospatial data. We propose a new learning framework to advance this research:
 
-[Hoffimann et al. 2021. Geostatistical Learning: Challenges and Opportunities](https://arxiv.org/abs/2102.08791)
+[Hoffimann et al. 2021. Geostatistical Learning: Challenges and Opportunities](https://www.frontiersin.org/articles/10.3389/fams.2021.689393/full)
 
 >**Definition (GL).** Given a source geospatial domain $\mathcal{D}_s$ and a source learning task $\mathcal{T}_s$, a target geospatial domain $\mathcal{D}_t$ and a target learning task $\mathcal{T}_t$, **Geostatistical Learning** consists of learning $\mathcal{T}_t$ over $\mathcal{D}_t$ using the knowledge acquired while learning $\mathcal{T}_s$ over $\mathcal{D}_s$, assuming that the data in $\mathcal{D}_s$ and $\mathcal{D}_t$ are a single realization of the involved geospatial processes.
 """
