@@ -88,7 +88,7 @@ Instituto de Matemática Pura e Aplicada
 
 # ╔═╡ 1e4e92a3-549b-46ee-905d-3dc4c82b12de
 html"""
-<img src="https://icm2018.impa.br/images/logo-impa.png" width=120>
+<img src="https://i.postimg.cc/KzStvKTg/logo-impa.png" width=120>
 """
 
 # ╔═╡ 5bd7385d-afa7-49ae-83a7-6879c48c770e
