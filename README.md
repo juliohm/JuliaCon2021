@@ -2,6 +2,12 @@
 
 Pluto presentation for JuliaCon2021 talk.
 
+<p align="center">
+  <a href="https://youtu.be/75A6zyn5pIE">
+    <img src="https://img.youtube.com/vi/75A6zyn5pIE/maxresdefault.jpg">
+  </a>
+</p>
+
 ## Instructions
 
 1. Clone or download this repository
